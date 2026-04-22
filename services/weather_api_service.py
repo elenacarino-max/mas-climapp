@@ -33,6 +33,11 @@ class WeatherAPIService:
             self.logger.error("AEMET_API_KEY no configurada.")
             return None
 
+        # Validación preventiva de ID de estación
+        if station_id not in self.estaciones_validas:
+            self.logger.warning(f"ID de estación no reconocido: {station_id}")
+            return None
+
         url_paso_1 = f"{self.base_url}{station_id}"
         headers = {
             'cache-control': "no-cache",
