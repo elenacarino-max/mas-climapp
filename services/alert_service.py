@@ -1,10 +1,12 @@
+import logging
 from typing import Dict, Any, List
 
 try:
     from utils.validators import validate_weather_data
 except ImportError:
     # Placeholder for development if utils.validators is not yet fully implemented
-    print("WARNING: Could not import 'validate_weather_data' from 'utils.validators'. Using a dummy validator.")
+    logger = logging.getLogger(__name__)
+    logger.warning("Could not import 'validate_weather_data' from 'utils.validators'. Using a dummy validator.")
     def validate_weather_data(data: Dict[str, Any]) -> bool:
         # Dummy implementation: always return True for now, assuming valid data for alert processing
         return True
