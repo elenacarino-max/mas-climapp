@@ -1,54 +1,63 @@
-from datetime import datetime
+import datetime #Importación de modulo para manejo de fechas
 
 def comprobar_si_es_numero(valor , nombre):
     """
-    Función interna para asegurar que el dato sea númerico
-    Lanza un error si el campo está vacío o tiene letras
+    Intenta convertir una entrada a float
+    Retorna el valor númerico si es exitoso, o None si el valor está vacío 
+    o no es convertible
     """
 
     try:
         if valor is None or str(valor).strip() == "":
-            raise ValueError (f"El campo '{nombre}' no puede estar vacío.")
-        return None #0 False
+            return None
+    # Conversión explícita para habilitar validaciones de rango 
     except(ValueError, TypeError):
         return None
 
 def validar_fecha(fecha_texto):
     """
-    Validar que la fecha tenga el formato exacto: AAAA-MM-DD HH:MM:SS
-    Si el formato es incorrecto, lanza un error de valor.
+    Verifica si una cadena de texto cumple con el formato
+    estándar AAAA-MM-DD HH:MM:SS
     """
     formato = "%Y-%m-%d %H:%M:%S"
     try:
-        #Se convierte el texto a un objeto datetime
-        datetime.strptime(fecha_texto , formato)
+        datetime.datetime.strptime(fecha_texto , formato)
         return True
     except ValueError:
         return False
 
 def validar_temperatura(valor):
-    """Valida que la temperatura sea un número y este en un rango lógico."""
+    """
+    Comprueba si la temperatura es un número válido
+    dentro del rango físico de -50 a 60 grados.
+    """
     t = comprobar_si_es_numero(valor, "Temperatura")
-    if t < None or t < -50 or t > 60:
+    # Se valida que no sea None antes de comparar rangos
+    if t is None or t < -50 or t > 60:
         return False
     return True
 
 def validar_humedad(valor):
-    """Valida que la humedad sea un número entre 0 y 100%"""
+    """Valida que la humedad sea un valor númerico
+    comprendido entre 0 y 100 por ciento
+    """
     h = comprobar_si_es_numero(valor, "Humedad")
     if h is None or h < 0 or h > 100:
         return False
     return True
 
 def validar_viento(valor):
-    """Valida que el viento sea un número y no sea negativo"""
+    """Asegura que la velocidad del viento sea un número y 
+    que no presente valores negativos
+    """
     v = comprobar_si_es_numero(valor, "Viento")
     if v is None or v < 0:
         return False
     return True
 
 def validar_lluvia(valor):
-    """Valida que la lluvia sea un número y no sea negativa"""
+    """Verifica que la precipitación sea un número válido
+    y que no sea inferior a cero"""
     ll = comprobar_si_es_numero(valor, "Lluvia")
     if ll is None or ll < 0:
         return False
@@ -57,8 +66,8 @@ def validar_lluvia(valor):
 #FUNCIÓN DE INTEGRACIÓN
 def validate_weather_data(data):
     """
-    Valida un diccionario completo
-    Devuelve True solo si TODOS los campos son válidos
+    Realiza una validación integral de un diccionario de daots.
+    Retorna True si todos los párametros climáticos son correctos
     """
     return all([
         validar_fecha(data.get("fecha")),
