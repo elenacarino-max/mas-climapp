@@ -3,7 +3,7 @@ import requests
 from utils.helpers import calcular_distancia
 from dotenv import load_dotenv
 
-# Cargamos variables de entorno (.env)
+# Cargamos variables de entorno (.env) ahí tenemos la key api que os pasé
 load_dotenv()
 AEMET_API_KEY = os.getenv("AEMET_API_KEY")
 
