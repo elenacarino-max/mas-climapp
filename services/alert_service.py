@@ -4,11 +4,10 @@ from typing import Dict, Any, List
 try:
     from utils.validators import validate_weather_data
 except ImportError:
-    # Placeholder for development if utils.validators is not yet fully implemented
+    # Placeholder para desarrollo si utils.validators no está implementado
     logger = logging.getLogger(__name__)
-    logger.warning("Could not import 'validate_weather_data' from 'utils.validators'. Using a dummy validator.")
+    logger.warning("No se pudo importar 'validate_weather_data'. Usando validador temporal.")
     def validate_weather_data(data: Dict[str, Any]) -> bool:
-        # Dummy implementation: always return True for now, assuming valid data for alert processing
         return True
 
 class AlertService:
@@ -29,20 +28,27 @@ class AlertService:
             return []
 
         alertas = []
-        temp = registro_normalizado.get("temperatura", 0.0)
-        viento = registro_normalizado.get("viento", 0.0)
-        lluvia = registro_normalizado.get("lluvia", 0.0)
-        humedad = registro_normalizado.get("humedad", 0)
 
-        # 2. Lógica de Temperatura (Jerarquía Excluyente)
-        if temp >= 40.0:  # Umbral Crítico Calor
+        # 2. Extracción segura con conversión a float (Blindaje de Juan)
+        # Esto asegura que si recibimos un string o un valor nulo, la app no se rompa.
+        try:
+            temp = float(registro_normalizado.get("temperatura", 0.0))
+            viento = float(registro_normalizado.get("viento", 0.0))
+            lluvia = float(registro_normalizado.get("lluvia", 0.0))
+            humedad = float(registro_normalizado.get("humedad", 0.0))
+        except (TypeError, ValueError):
+            # Si los datos no son convertibles a número, devolvemos lista vacía por seguridad
+            return []
+
+        # 3. Lógica de Temperatura (Jerarquía Excluyente)
+        if temp >= 40.0:    # Umbral Crítico Calor
             alertas.append("ROJA")
         elif temp >= 35.0:  # Umbral Advertencia Calor
             alertas.append("NARANJA")
-        elif temp <= 0.0:  # Umbral Helada
+        elif temp <= 0.0:   # Umbral Helada
             alertas.append("HELADA")
 
-        # 3. Lógica Independiente (Acumulativa)
+        # 4. Lógica Independiente (Acumulativa)
         if viento > 70.0:
             alertas.append("VIENTO_FUERTE")
         if lluvia > 30.0:
