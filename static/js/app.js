@@ -1,26 +1,61 @@
-/**
- * Gestión del formulario de registro climático.
- * Encapsulado en DOMContentLoaded para evitar errores de carga.
- */
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", async function() {
     
+    // 1. Referencias al DOM
     const formulario = document.getElementById("form-registro");
+    const municipioInput = document.getElementById("municipio_input");
+    const hiddenInput = document.getElementById("estacion_id");
+    const datalist = document.getElementById("estaciones_list");
     const mensajeDiv = document.getElementById("mensaje");
 
-    // Verificación de seguridad: si no encuentra el formulario, avisa en consola
-    if (!formulario) {
-        console.error("❌ Error: No se encontró el formulario con ID 'form-registro'");
-        return;
+    let listaMunicipios = [];
+
+    // 2. CARGAR EL ARCHIVO JSON (IMPORTANTE)
+    try {
+        // Ajusta la ruta si tu archivo está en otra carpeta de 'static'
+        const respuesta = await fetch('/static/js/estacion_por_municipio.json');
+        const datos = await respuesta.json();
+        
+        // Guardamos el array interno en nuestra variable
+        listaMunicipios = datos.estacion_por_municipio;
+
+        // 3. POBLAR EL DATALIST (Autocompletado)
+        listaMunicipios.forEach(item => {
+            const option = document.createElement("option");
+            option.value = item.municipio;
+            datalist.appendChild(option);
+        });
+        
+        console.log("✅ Municipios cargados desde el JSON");
+
+    } catch (error) {
+        console.error("❌ Error cargando el archivo JSON:", error);
     }
 
+    // 4. LOGICA DE SINCRONIZACIÓN (Nombre -> ID)
+    municipioInput.addEventListener("input", function() {
+        const seleccion = listaMunicipios.find(e => e.municipio === this.value);
+        
+        if (seleccion) {
+            hiddenInput.value = seleccion.id_estacion;
+            this.style.borderLeft = "4px solid var(--success)";
+        } else {
+            hiddenInput.value = "";
+            this.style.borderLeft = "1px solid var(--border)";
+        }
+    });
+
+    // 5. ENVÍO DEL FORMULARIO
     formulario.addEventListener("submit", async function(e) {
-        // 1. Detener el envío normal para procesarlo con AJAX/Fetch
         e.preventDefault();
 
-        // 2. Captura y conversión de datos
-        // Usamos parseFloat para asegurar que los valores sean números en Python
-        const datos = {
-            estacion_id: document.getElementById("estacion_id").value.trim(),
+        if (!hiddenInput.value) {
+            mensajeDiv.innerText = "❌ Selecciona un municipio de la lista";
+            mensajeDiv.style.color = "#ef4444";
+            return;
+        }
+
+        const datosEnvio = {
+            estacion_id: hiddenInput.value,
             fecha:       document.getElementById("fecha").value,
             temperatura: parseFloat(document.getElementById("temperatura").value),
             humedad:     parseFloat(document.getElementById("humedad").value),
@@ -28,49 +63,24 @@ document.addEventListener("DOMContentLoaded", function() {
             lluvia:      parseFloat(document.getElementById("lluvia").value)
         };
 
-        // 3. Validación de Humedad (Frontend)
-        // Evita el envío si el valor no es numérico o está fuera de rango
-        const humValue = document.getElementById("humedad").value;
-        if (humValue === "" || isNaN(datos.humedad) || datos.humedad < 0 || datos.humedad > 100) {
-            mensajeDiv.innerText = "❌ La humedad debe estar entre 0% y 100%";
-            mensajeDiv.style.color = "#ef4444";
-            return;
-        }
-
-        // 4. Feedback visual de carga
-        mensajeDiv.innerText = "⏳ Guardando registro...";
-        mensajeDiv.style.color = "#3b82f6";
-
         try {
-            // 5. Envío al controlador de Flask
             const response = await fetch('/api/registrar', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(datos)
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(datosEnvio)
             });
 
             const resultado = await response.json();
 
             if (response.ok) {
-                // Éxito total
-                mensajeDiv.innerText = "✔ " + (resultado.message || "Guardado con éxito");
-                mensajeDiv.style.color = "#22c55e";
-                
-                // Limpiar campos para el siguiente registro
+                mensajeDiv.innerText = "✔ Registro guardado correctamente";
+                mensajeDiv.style.color = "var(--success)";
                 formulario.reset();
-            } else {
-                // El servidor (Python) rechazó los datos por validación
-                mensajeDiv.innerText = "❌ " + (resultado.message || "Error en el servidor");
-                mensajeDiv.style.color = "#ef4444";
+                hiddenInput.value = "";
+                municipioInput.style.borderLeft = "1px solid var(--border)";
             }
-
         } catch (error) {
-            // Fallo de conexión o error crítico
-            mensajeDiv.innerText = "❌ No se pudo conectar con el servidor";
-            mensajeDiv.style.color = "#ef4444";
-            console.error("Error en Fetch:", error);
+            mensajeDiv.innerText = "❌ Error al conectar con el servidor";
         }
     });
 });

@@ -112,3 +112,47 @@ input:focus {
   font-size: 0.85rem;
   color: var(--success);
 }
+/* Contenedor de mensajes flash */
+.flashes {
+  list-style: none;
+  margin-bottom: 1.2rem;
+}
+
+.alert {
+  padding: 0.8rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Estilo para mensajes de ÉXITO */
+.alert-success {
+  background: rgba(34, 197, 94, 0.15); /* Verde suave transparente */
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+/* Estilo para mensajes de ERROR */
+.alert-error {
+  background: rgba(239, 68, 68, 0.15); /* Rojo suave transparente */
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+/* Resaltar el input de localidad para que el usuario sepa que es un buscador */
+#municipio_input {
+  border-left: 3px solid var(--accent);
+}
+
+/* Estilo para el datalist (opcional, algunos navegadores lo permiten) */
+datalist {
+  background-color: var(--card-bg);
+  color: var(--text-main);
+}
