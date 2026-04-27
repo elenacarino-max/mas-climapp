@@ -13,15 +13,31 @@
         <h1>Registrar Datos</h1> 
         
         <div class="card">
-            <form id="form-registro">
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <div class="flashes">
+                {% for category, message in messages %}
+                  <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+                </div>
+              {% endif %}
+            {% endwith %}
+
+            <form id="form-registro" action="/registrar" method="POST">
+                
                 <div class="form-group">
-                    <label>ID de la estación</label>
-                    <input type="text" id="estacion_id" name="estacion_id" placeholder="Ej: EST-01" required>
+                    <label>Municipio de Madrid</label>
+                    <input type="text" id="municipio_input" list="estaciones_list" placeholder="Escribe para buscar tu pueblo..." required>
+                    <datalist id="estaciones_list">
+                        </datalist>
+                    
+                    <input type="hidden" id="estacion_id" name="estacion_id">
                 </div>
 
                 <div class="form-group">
                     <label>Fecha y Hora</label>
-                    <input type="text" id="fecha" name="fecha" placeholder="DD-MM-AAAA HH:MM" required>
+                    <input type="datetime-local" id="fecha" name="fecha" required>
                 </div>
 
                 <div class="grid-inputs">
