@@ -1,6 +1,8 @@
 from flask import Flask, jsonify, request
 from dotenv import load_dotenv
 import os
+# esto no esta en git
+from services.normalizer_service import normalizar_datos_aemet
 
 from controllers.view_controller import view_bp
 # Importamos tanto el servicio de API como el normalizador
@@ -46,3 +48,16 @@ if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
 
             # 24/04 A la espera de intregar con Isabela
+
+def normalizar_datos_aemet(data):
+    """
+    Función provisional para que la app no pete.
+    Simplemente devuelve los datos como están hasta que 
+    Juan termine su parte.
+    """
+    if not data:
+        return {"error": "No hay datos para normalizar"}
+    
+    # Si viene una lista, cogemos el último registro
+    registro = data[-1] if isinstance(data, list) else data
+    return registro            
