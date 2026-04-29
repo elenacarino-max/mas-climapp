@@ -14,5 +14,99 @@
         "humedad": 12.0,
         "viento": 2.0,
         "lluvia": 2.0
+    },
+    {
+        "estacion_id": "3121Q",
+        "fecha": "2023-02-10T10:10",
+        "temperatura": 2.0,
+        "humedad": 1.0,
+        "viento": 12.0,
+        "lluvia": 23.0
+    },
+    {
+        "estacion_id": "3214Y",
+        "fecha": "2026-04-29T12:55",
+        "temperatura": 20.0,
+        "humedad": 32.0,
+        "viento": 1.0,
+        "lluvia": 23.0
+    },
+    {
+        "estacion_id": "3214Y",
+        "fecha": "2026-04-29T11:12",
+        "temperatura": 23.0,
+        "humedad": 3.0,
+        "viento": 2.0,
+        "lluvia": 3.0
+    },
+    {
+        "estacion_id": "3195",
+        "fecha": "2026-04-26T10:10",
+        "temperatura": 22.0,
+        "humedad": 2.0,
+        "viento": 1.0,
+        "lluvia": 2.0,
+        "municipio": null,
+        "fuente": "manual"
+    },
+    {
+        "estacion_id": "3214Y",
+        "fecha": "2026-01-29T10:12",
+        "temperatura": 18.0,
+        "humedad": 22.0,
+        "viento": 2.0,
+        "lluvia": 1.0,
+        "municipio": null,
+        "fuente": "manual"
+    },
+    {
+        "estacion_id": "3195",
+        "fecha": "2026-04-20T10:12",
+        "temperatura": 20.0,
+        "humedad": 2.0,
+        "viento": 2.0,
+        "lluvia": 2.0,
+        "municipio": "Madrid",
+        "fuente": "manual"
+    },
+    {
+        "estacion_id": "3195",
+        "fecha": "26/04/2026",
+        "temperatura": 21.0,
+        "humedad": 22.0,
+        "viento": 2.0,
+        "lluvia": 1.0,
+        "municipio": "Madrid",
+        "fuente": "manual"
+    },
+    {
+        "estacion_id": "3195",
+        "fecha": "10/01/2026",
+        "temperatura": 2.0,
+        "humedad": 2.0,
+        "viento": 1.0,
+        "lluvia": 2.0,
+        "municipio": "Madrid",
+        "fuente": "manual"
+    },
+    {
+        "estacion_id": "3195",
+        "fecha": "29/01/2026",
+        "temperatura": 21.0,
+        "humedad": 2.0,
+        "viento": 21.0,
+        "lluvia": 1.0,
+        "municipio": "Madrid",
+        "fuente": "manual"
+    },
+    {
+        "estacion_id": "3195",
+        "fecha": "20/01/2026",
+        "temperatura": 1.0,
+        "humedad": 1.0,
+        "viento": 2.0,
+        "lluvia": 2.0,
+        "municipio": "Madrid",
+        "fuente": "manual"
     }
 ]

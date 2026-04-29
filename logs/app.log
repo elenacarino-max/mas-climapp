@@ -1,0 +1,27 @@
+2026-04-29 13:02:11 [ERROR] No hay registros manuales para 'valdemorillo'.
+2026-04-29 13:02:35 [ERROR] No hay registro manual para el municipio 'valdemorillo'.
+2026-04-29 13:02:38 [ERROR] No hay registro manual para el municipio 'valdemorillo'.
+2026-04-29 13:02:45 [ERROR] No hay registro manual para el municipio 'madrid'.
+2026-04-29 13:04:25 [ERROR] Falta el registro manual para valdemorillo.
+2026-04-29 13:38:37 [INFO] Comparación exitosa para madrid.
+2026-04-29 13:42:28 [INFO] Iniciando comparativa para: madrid
+2026-04-29 13:42:34 [INFO] Iniciando comparativa para: madrid
+2026-04-29 13:43:54 [INFO] Empiezo la comparativa real para: madrid
+2026-04-29 13:43:54 [ERROR] ¡Ojo! No encuentro el archivo de estaciones en: static\estacion_por_municipio.json
+2026-04-29 13:43:54 [ERROR] No he podido mapear el municipio 'madrid' a coordenadas GPS.
+2026-04-29 13:45:02 [INFO] Iniciando comparativa para: madrid
+2026-04-29 13:47:03 [INFO] Iniciando comparativa para: madrid
+2026-04-29 13:53:09 [INFO] Iniciando comparativa para: madrid
+2026-04-29 14:08:19 [INFO] Iniciando comparativa para: madrid
+2026-04-29 14:20:49 [INFO] Comparando madrid para el día 29/04/2026
+2026-04-29 14:21:02 [INFO] Comparando madrid para el día 29/04/2026
+2026-04-29 14:21:16 [INFO] Comparando madrid para el día 29/04/2026
+2026-04-29 14:22:39 [INFO] Recibida petición de comparación: madrid para fecha None
+2026-04-29 14:26:04 [INFO] Recibida petición de comparación: madrid para fecha None
+2026-04-29 14:30:10 [INFO] Comparación: madrid - fecha recibida: None
+2026-04-29 14:30:10 [INFO] Fecha usada: 29/04/2026
+2026-04-29 14:32:36 [INFO] Comparación: madrid - fecha recibida: None
+2026-04-29 14:32:36 [INFO] Fecha usada: 29/04/2026
+2026-04-29 14:37:41 [INFO] Iniciando comparativa: madrid para el día 26/04/2026
+2026-04-29 14:38:09 [INFO] Iniciando comparativa: madrid para el día 20/01/2026
+2026-04-29 14:40:50 [INFO] Iniciando comparativa: madrid para el día 20/01/2026
