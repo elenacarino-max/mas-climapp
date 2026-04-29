@@ -1,128 +1,168 @@
 import pytest
 
-# Importamos las funciones que queremos probar desde compare_controller.py
 from controllers.compare_controller import (
     calculate_difference,
     has_discrepancy,
-    compare_latest_records
+    compare_latest_records,
 )
 
 
 # =====================================================
 # FIXTURES
 # =====================================================
-# Una fixture es una función que prepara datos de prueba
-# para reutilizarlos en varios tests.
-# Así no tenemos que copiar el mismo diccionario muchas veces.
-
 
 @pytest.fixture
 def manual_record():
-    
-    #Registro manual ficticio para usar en los tests.
-    #Simula un dato introducido por una persona.
-    
+    """
+    Registro manual simulado, como si viniera del JSON.
+    """
+
     return {
         "id": "manual_1",
-        "fecha": "2026-04-22 12:00:00",
         "municipio": "Madrid",
-        "temperatura": 23.5,
+        "fecha": "22/04/2026",
+        "fuente": "manual",
+        "estacion_id": "3195",
+        "temperatura": 20.0,
         "humedad": 60,
         "viento": 10.0,
-        "lluvia": 0,
-        "fuente": "manual"
+        "lluvia": 0.0,
     }
 
 
 @pytest.fixture
 def api_record():
-    #Registro API ficticio para usar en los tests.
-    #Simula un dato recibido automáticamente desde AEMET.
-    
+    """
+    Registro API simulado, como si viniera normalizado desde AEMET.
+    """
+
     return {
         "id": "api_1",
-        "fecha": "2026-04-22 12:30:00",
         "municipio": "Madrid",
-        "temperatura": 22.4,
+        "fecha": "2026-04-22 12:30:00",
+        "fuente": "api_aemet",
+        "estacion": "Madrid",
+        "temperatura": 21.0,
         "humedad": 58,
-        "viento": 12.1,
-        "lluvia": 0,
-        "fuente": "api_aemet"
+        "viento": 12.0,
+        "lluvia": 0.0,
     }
 
 
 # =====================================================
-# TESTS DE FUNCIONES PEQUEÑAS
+# TESTS calculate_difference()
 # =====================================================
 
+def test_calculate_difference_with_numbers():
+    """
+    Comprueba que calcula correctamente la diferencia entre dos números.
+    """
 
-def test_calculate_difference():
-    
-    #Comprueba que calculate_difference calcula bien
-    #la diferencia absoluta entre dos números.
-    
-    result = calculate_difference(10, 8)
-
-    # Esperamos que la diferencia entre 10 y 8 sea 2
-    assert result == 2
+    assert calculate_difference(20, 23) == 3.0
+    assert calculate_difference(10.5, 8.0) == 2.5
 
 
-def test_calculate_difference_rounding():
-   
-    #Comprueba que calculate_difference redondea correctamente
-    #la diferencia a 2 decimales.
-    
-    result = calculate_difference(22.4, 23.5)
+def test_calculate_difference_with_none():
+    """
+    Comprueba que si recibe None lo trata como 0.0.
+    """
 
-    # Sin redondeo, Python podría devolver 1.1000000000000014.
-    # Con nuestro código esperamos 1.1.
-    assert result == 1.1
+    assert calculate_difference(None, 5) == 5.0
+    assert calculate_difference(5, None) == 5.0
 
 
-def test_has_discrepancy_true():
-   
-    #Comprueba que has_discrepancy devuelve True
-    #cuando alguna diferencia supera los umbrales definidos.
-    
-    differences = {
-        "temperatura": 4,
-        "humedad": 1,
-        "viento": 0,
-        "lluvia": 0
-    }
+def test_calculate_difference_with_invalid_values():
+    """
+    Comprueba que si recibe valores no convertibles devuelve 0.0.
+    """
 
-    # Como temperatura es mayor que 3, debe haber discrepancia.
-    assert has_discrepancy(differences) is True
+    assert calculate_difference("hola", 5) == 0.0
+    assert calculate_difference(5, "adios") == 0.0
 
+
+# =====================================================
+# TESTS has_discrepancy()
+# =====================================================
 
 def test_has_discrepancy_false():
-   
-    #Comprueba que has_discrepancy devuelve False
-    #cuando ninguna diferencia supera los umbrales.
-   
+    """
+    Comprueba que no hay discrepancia si las diferencias están dentro
+    de los límites aceptados.
+    """
+
     differences = {
-        "temperatura": 1,
-        "humedad": 1,
-        "viento": 0,
-        "lluvia": 0
+        "temperatura": 2,
+        "humedad": 5,
+        "viento": 8,
+        "lluvia": 3,
     }
 
-    # Ninguna diferencia supera el umbral, así que no hay discrepancia.
     assert has_discrepancy(differences) is False
 
 
-# =====================================================
-# TESTS DE compare_latest_records CON MONKEYPATCH
-# =====================================================
-# compare_latest_records necesita consultar datos en el repository.
-# Para no depender del archivo JSON real, usamos monkeypatch.Se usa para evitar dependencias externas(json, apis)
-# Controlamos el flujo de datos en los tests,sustituyendo funciones reales por otras simuladas, 
-# para no depender de APIs, archivos json, bases de datos, etc. Esto hace que los tests sean más rápidos y fiables.
-# monkeypatch sustituye temporalmente solo para los test,una función real por una falsa.
-# En este caso sustituimos find_latest_by_municipio_and_source()
-# por una función fake que devuelve datos preparados por nosotras.
+def test_has_discrepancy_true_temperature():
+    """
+    Comprueba que hay discrepancia si la temperatura supera el límite.
+    """
+
+    differences = {
+        "temperatura": 4,
+        "humedad": 5,
+        "viento": 8,
+        "lluvia": 3,
+    }
+
+    assert has_discrepancy(differences) is True
 
 
+def test_has_discrepancy_true_humidity():
+    """
+    Comprueba que hay discrepancia si la humedad supera el límite.
+    """
+
+    differences = {
+        "temperatura": 2,
+        "humedad": 11,
+        "viento": 8,
+        "lluvia": 3,
+    }
+
+    assert has_discrepancy(differences) is True
+
+
+def test_has_discrepancy_true_wind():
+    """
+    Comprueba que hay discrepancia si el viento supera el límite.
+    """
+
+    differences = {
+        "temperatura": 2,
+        "humedad": 5,
+        "viento": 11,
+        "lluvia": 3,
+    }
+
+    assert has_discrepancy(differences) is True
+
+
+def test_has_discrepancy_true_rain():
+    """
+    Comprueba que hay discrepancia si la lluvia supera el límite.
+    """
+
+    differences = {
+        "temperatura": 2,
+        "humedad": 5,
+        "viento": 8,
+        "lluvia": 6,
+    }
+
+    assert has_discrepancy(differences) is True
+
+
+# =====================================================
+# TESTS compare_latest_records()
+# =====================================================
 
 def test_compare_latest_records_success(monkeypatch, manual_record, api_record):
     """
@@ -130,110 +170,137 @@ def test_compare_latest_records_success(monkeypatch, manual_record, api_record):
     cuando existen tanto el registro manual como el registro API.
     """
 
-    # Creamos una función falsa que simula el comportamiento del repository.
-    # Si se pide fuente manual, devuelve manual_record.
-    # Si se pide fuente api_aemet, devuelve api_record.
-    def fake_find_latest(municipio, fuente):
-        if fuente == "manual":
-            return manual_record
+    # Simulamos que filter_records encuentra un registro manual en el JSON.
+    def fake_filter_records(municipio, fecha):
+        return [manual_record]
 
-        if fuente == "api_aemet":
-            return api_record
+    # Simulamos el servicio de AEMET.
+    # Tiene que tener el método _obtener_datos_crudos()
+    # porque eso es lo que usa compare_latest_records().
+    class FakeWeatherAPIService:
+        def _obtener_datos_crudos(self):
+            return [
+                {
+                    "idema": manual_record["estacion_id"],
+                    "ubi": "Madrid",
+                    "fint": "2026-04-22T12:30:00",
+                    "ta": "21",
+                    "hr": "58",
+                    "vv": "12",
+                    "prec": "0",
+                }
+            ]
 
-        return None
+    # Simulamos el normalizador para que devuelva nuestro api_record.
+    def fake_normalizar_datos_aemet(raw_data):
+        return api_record.copy()
 
-    # Sustituimos la función real del compare_controller
-    # por nuestra función falsa.
     monkeypatch.setattr(
-        "controllers.compare_controller.find_latest_by_municipio_and_source",
-        fake_find_latest
+        "controllers.compare_controller.filter_records",
+        fake_filter_records,
     )
 
-    # Ejecutamos la función principal de comparativa.
-    result = compare_latest_records("Madrid")
+    monkeypatch.setattr(
+        "controllers.compare_controller.WeatherAPIService",
+        FakeWeatherAPIService,
+    )
 
-    # Comprobamos que la comparación fue exitosa.
-    assert result["success"] is True
+    monkeypatch.setattr(
+        "controllers.compare_controller.normalizar_datos_aemet",
+        fake_normalizar_datos_aemet,
+    )
 
-    # Comprobamos que el municipio devuelto es correcto.
-    assert result["municipio"] == "Madrid"
+    resultado = compare_latest_records("Madrid", "2026-04-22")
 
-    # Comprobamos que devuelve el bloque de diferencias.
-    assert "diferencias" in result
-
-    # Comprobamos que indica si hay o no discrepancia.
-    assert "hay_discrepancia" in result
-
-    # Comprobamos una diferencia concreta.
-    assert result["diferencias"]["temperatura"] == 1.1
+    assert resultado["success"] is True
+    assert resultado["municipio"] == "Madrid"
+    assert resultado["fecha"] == "22/04/2026"
+    assert resultado["manual"] == manual_record
+    assert resultado["api"]["fuente"] == "AEMET (Oficial)"
+    assert "diferencias" in resultado
+    assert "hay_discrepancia" in resultado
 
 
-def test_compare_latest_records_no_manual(monkeypatch, api_record):
+def test_compare_latest_records_no_manual(monkeypatch):
     """
     Comprueba que compare_latest_records devuelve error
     si no existe registro manual.
     """
 
-    # Función falsa:
-    # - para manual devuelve None
-    # - para api_aemet devuelve api_record
-    def fake_find_latest(municipio, fuente):
-        if fuente == "manual":
-            return None
+    # Simulamos que filter_records no encuentra registros.
+    def fake_filter_records(municipio, fecha):
+        return []
 
-        if fuente == "api_aemet":
-            return api_record
-
-        return None
-
-    # Sustituimos la función real por la falsa.
     monkeypatch.setattr(
-        "controllers.compare_controller.find_latest_by_municipio_and_source",
-        fake_find_latest
+        "controllers.compare_controller.filter_records",
+        fake_filter_records,
     )
 
-    # Ejecutamos la comparación.
-    result = compare_latest_records("Madrid")
+    resultado = compare_latest_records("Madrid", "2026-04-22")
 
-    # Debe fallar porque falta el dato manual.
-    assert result["success"] is False
-
-    # El mensaje debe mencionar el registro manual.
-    assert "manual" in result["message"].lower()
+    assert resultado["success"] is False
+    assert "No hay datos manuales" in resultado["message"]
 
 
 def test_compare_latest_records_no_api(monkeypatch, manual_record):
     """
     Comprueba que compare_latest_records devuelve error
-    si no existe registro API AEMET.
+    si no existe registro API AEMET para la estación manual.
     """
 
-    # Función falsa:
-    # - para manual devuelve manual_record
-    # - para api_aemet devuelve None
-    def fake_find_latest(municipio, fuente):
-        if fuente == "manual":
-            return manual_record
+    # Simulamos que sí existe registro manual.
+    def fake_filter_records(municipio, fecha):
+        return [manual_record]
 
-        if fuente == "api_aemet":
-            return None
+    # Simulamos que AEMET no devuelve ninguna observación.
+    class FakeWeatherAPIService:
+        def _obtener_datos_crudos(self):
+            return []
 
-        return None
-
-    # Sustituimos la función real por la falsa.
     monkeypatch.setattr(
-        "controllers.compare_controller.find_latest_by_municipio_and_source",
-        fake_find_latest
+        "controllers.compare_controller.filter_records",
+        fake_filter_records,
     )
 
-    # Ejecutamos la comparación.
-    result = compare_latest_records("Madrid")
+    monkeypatch.setattr(
+        "controllers.compare_controller.WeatherAPIService",
+        FakeWeatherAPIService,
+    )
 
-    # Debe fallar porque falta el dato API.
-    assert result["success"] is False
+    resultado = compare_latest_records("Madrid", "2026-04-22")
 
-    # El mensaje debe mencionar API.
-    assert "api" in result["message"].lower()
+    assert resultado["success"] is False
+    assert "AEMET" in resultado["message"]
 
+
+def test_compare_latest_records_api_exception(monkeypatch, manual_record):
+    """
+    Comprueba que compare_latest_records devuelve error
+    si falla la conexión o la consulta a la API.
+    """
+
+    # Simulamos que sí existe registro manual.
+    def fake_filter_records(municipio, fecha):
+        return [manual_record]
+
+    # Simulamos que el servicio de AEMET falla.
+    class FakeWeatherAPIService:
+        def _obtener_datos_crudos(self):
+            raise Exception("Error simulado de API")
+
+    monkeypatch.setattr(
+        "controllers.compare_controller.filter_records",
+        fake_filter_records,
+    )
+
+    monkeypatch.setattr(
+        "controllers.compare_controller.WeatherAPIService",
+        FakeWeatherAPIService,
+    )
+
+    resultado = compare_latest_records("Madrid", "2026-04-22")
+
+    assert resultado["success"] is False
+    assert "API" in resultado["message"] or "AEMET" in resultado["message"]
 
     #para probar py -m pytest tests/test_compare_controller.py tests/test_json_repository.py -v

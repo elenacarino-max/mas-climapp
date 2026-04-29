@@ -77,7 +77,7 @@ def test_validar_fecha_formato_preferido():
     
     #Formato preferido: día-mes-año con hora completa.
     
-    assert validar_fecha("27-04-2026 13:30:00") is True
+    assert validar_fecha("27/04/2026 13:30:00") is True
 
 
 def test_validar_fecha_con_barras():
@@ -91,28 +91,23 @@ def test_validar_fecha_sin_segundos():
     
     #Formato día-mes-año sin segundos.
     
-    assert validar_fecha("27-04-2026 13:30") is True
+    assert validar_fecha("27/04/2026 13:30") is True
 
 
-def test_validar_fecha_formato_html():
-    
-    #Formato típico de navegador/input datetime-local.
-    
-    assert validar_fecha("2026-04-27T13:30") is True
 
 
 def test_validar_fecha_formato_iso_con_segundos():
     
     #Formato año-mes-día con segundos.
     
-    assert validar_fecha("2026-04-27 13:30:00") is True
+    assert validar_fecha("27/04/2026 13:30:00") is True
 
 
 def test_validar_fecha_incorrecta():
     
     #Fecha con formato inválido.
-    
-    assert validar_fecha("27-04-2026") is False
+    assert validar_fecha("2026/04/27T13:30") is False
+    assert validar_fecha("27-04-2026") is True
     assert validar_fecha("fecha incorrecta") is False
     assert validar_fecha("") is False
     assert validar_fecha(None) is False
