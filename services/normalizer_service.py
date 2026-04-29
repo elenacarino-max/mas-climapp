@@ -26,7 +26,7 @@ def normalizar_datos_aemet(data):
             "viento": float(latest.get("vv", 0)) if latest.get("vv") else 0,
             "presion": float(latest.get("pres", 0)) if latest.get("pres") else 0,
             # Añadimos lluvia si existe en los datos de AEMET (prec) para tus alertas
-            "lluvia": float(latest.get("prec", 0)) if latest.get("prec") else 0
+            "lluvia": 0.0 if str(latest.get("prec", "")).strip().lower() == "ip" else float(str(latest.get("prec", 0) or 0).replace(",", "."))
         }
 
         # 3. LLAMADA MÁGICA: Usamos tu AlertService para generar las etiquetas
