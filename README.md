@@ -78,14 +78,14 @@ Se calculan diferencias en:
 - Lluvia
 
 ## 🚨 Sistema de alertas
-Alerta	Condición
-ROJA	Temperatura ≥ 40 ºC
-NARANJA	Temperatura ≥ 35 ºC
-HELADA	Temperatura ≤ 0 ºC
-VIENTO_FUERTE	Viento > 70 km/h
-LLUVIA_INTENSA	Lluvia > 30 mm
-HUMEDAD_ALTA	Humedad ≥ 90%
-
+| Alerta | Condición |
+| :--- | :--- |
+| **🔴 ROJA** | Temperatura ≥ 40 ºC |
+| **🟠 NARANJA** | Temperatura ≥ 35 ºC |
+| **❄️ HELADA** | Temperatura ≤ 0 ºC |
+| **💨 VIENTO FUERTE** | Viento > 70 km/h |
+| **🌧️ LLUVIA INTENSA** | Lluvia > 30 mm |
+| **💧 HUMEDAD ALTA** | Humedad ≥ 90% |
 ## 🏗️ Arquitectura
 
 El proyecto utiliza un patrón de diseño desacoplado para separar la lógica de negocio de la interfaz:
