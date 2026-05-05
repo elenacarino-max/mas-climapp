@@ -1,7 +1,7 @@
 
 # 🌦️ ClimApp
 
-### Aplicación web para consultar, registrar y comparar datos meteorológicos en España
+### Aplicación web para consultar, registrar y comparar datos meteorológicos en la Comunidad de Madrid
 
 ![Python](https://img.shields.io/badge/Python-3.x-blue)
 ![Flask](https://img.shields.io/badge/Flask-Web%20App-black)
@@ -10,7 +10,7 @@
 
 ## 📌 Descripción
 
-**ClimApp** es una robusta aplicación web desarrollada con **Python + Flask** diseñada para la monitorización climática precisa en España, integrando directamente la **API oficial de AEMET OpenData**.
+**ClimApp** es una robusta aplicación web desarrollada con **Python + Flask** diseñada para la monitorización climática precisa en Madrid, integrando directamente la **API oficial de AEMET OpenData**.
 
 El núcleo de la aplicación reside en su capacidad de geolocalización inteligente: detecta la ubicación del usuario mediante GPS, calcula mediante algoritmos geoespaciales la estación meteorológica oficial más cercana y sirve datos en tiempo real sobre:
 
