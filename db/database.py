@@ -68,16 +68,9 @@ def get_db():
 
 def create_tables():
     """
-    Crea físicamente todas las tablas en la base de datos si no existen todavía.
-
-    Base.metadata contiene el registro de todos los modelos que heredan de Base.
-    create_all() recorre ese registro y ejecuta un CREATE TABLE IF NOT EXISTS
-    por cada modelo, respetando el orden de las claves foráneas.
-
-    Se llama UNA SOLA VEZ al arrancar la app, desde main_api.py:
-        from db.database import create_tables
-        create_tables()
-
-    No borra datos existentes: si la tabla ya existe, no hace nada.
+    Crea todas las tablas en la base de datos si no existen todavía.
+    Es necesario importar models aquí para que SQLAlchemy los registre
+    en Base.metadata antes de llamar a create_all().
     """
+    from db import models  # noqa: F401 — import necesario para registrar los modelos
     Base.metadata.create_all(bind=engine)
