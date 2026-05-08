@@ -1,20 +1,31 @@
-# Servidor y Web
+﻿# Servidor y Web
 flask
 gunicorn
+
+# API REST del Proyecto 3
+fastapi
+uvicorn[standard]
 
 # Variables de entorno
 python-dotenv
 
-# Comunicación y API
+# Comunicacion con APIs externas
 requests
+httpx
 
-# Tareas automáticas (Scheduler)
+# Tareas automaticas Scheduler
 flask-apscheduler
 
-# Análisis de datos
+# Analisis y ETL de datos
 pandas
 openpyxl
 
+# Base de datos y ORM
+sqlalchemy
+
+# Validacion de datos
+pydantic
+
 # Tests y calidad
 pytest
-
+pytest-cov
