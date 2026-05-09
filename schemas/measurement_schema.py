@@ -1,6 +1,9 @@
+# Para manejar fechas reales (created_at) que vienen de la base de datos
+from datetime import datetime  
+
 # Importamos BaseModel para crear los schemas (estructuras de datos)
 # y field_validator para validar automáticamente los campos
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 # Importamos las funciones de validación que ya existen en el proyecto
 # IMPORTANTE: estas funciones devuelven True o False
@@ -18,6 +21,13 @@ from utils.validators import (
 # Aquí definimos los campos comunes a una medición
 # Se reutiliza tanto en entrada como en salida
 class MeasurementBase(BaseModel):
+
+    # Clave foránea que conecta con la tabla zonas (estaciones meteorológicas)
+    # # ID de la zona a la que pertenece la medición (lo envía el usuario) 
+    zona_id: int
+
+    # Fecha y hora del dato climático
+    fecha_datos: str
 
     # Temperatura registrada (número decimal)
     temperatura: float
@@ -38,20 +48,22 @@ class MeasurementBase(BaseModel):
 # Representa los datos que envía el usuario a la API
 class MeasurementCreate(MeasurementBase):
 
-    # ID de la estación meteorológica
-    # El usuario lo envía para indicar de dónde es la medición
-    estacion_id: int
+    """
+    Schema usado para crear una nueva medición.
+
+    Mantiene las validaciones personalizadas del proyecto.
+    """
 
 
     # ------------------------------------------------------
-    # VALIDACIÓN DEL ID DE ESTACIÓN
+    # VALIDACIÓN DEL ID DE ZONA
     # ------------------------------------------------------
-    @field_validator("estacion_id")
+    @field_validator("zona_id")
     @classmethod
-    def check_estacion_id(cls, value):
+    def check_zona_id(cls, value):
         # Comprobamos que el ID sea positivo
         if value <= 0:
-            raise ValueError("El ID de estación debe ser mayor que 0")
+            raise ValueError("El ID de zona debe ser mayor que 0")
         return value
 
 
@@ -112,11 +124,20 @@ class MeasurementCreate(MeasurementBase):
 # ==========================================================
 # SCHEMA DE SALIDA (RESPONSE)
 # ==========================================================
-# Representa los datos que devuelve la API
 class MeasurementResponse(MeasurementBase):
 
-    # Devolvemos también la estación asociada
-    estacion_id: int
+    """
+    Schema usado para devolver una medición desde la API.
 
-    # La fecha NO la envía el usuario, la genera el sistema
-    fecha: str
+    Incluye campos que vienen de la base de datos.
+    """
+ 
+    # ID único de la medición (clave primaria) en la base de datos
+    id: int 
+
+    # Fecha en la que se guardó el registro en la base de datos (se genera automáticamente)
+    created_at: datetime | None = None
+
+
+    # Permite convertir objetos de SQLAlchemy a JSON automáticamente
+    model_config = ConfigDict(from_attributes=True)
