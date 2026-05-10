@@ -17,7 +17,7 @@ from utils.validators import (
 # ==========================================================
 # Aquí definimos los campos comunes a una medición
 # Se reutiliza tanto en entrada como en salida
-class MedicionBase(BaseModel):
+class MeasurementBase(BaseModel):
 
     # Temperatura registrada (número decimal)
     temperatura: float
@@ -36,7 +36,7 @@ class MedicionBase(BaseModel):
 # SCHEMA DE ENTRADA (CREATE)
 # ==========================================================
 # Representa los datos que envía el usuario a la API
-class MedicionCreate(MedicionBase):
+class MeasurementCreate(MeasurementBase):
 
     # ID de la estación meteorológica
     # El usuario lo envía para indicar de dónde es la medición
@@ -113,7 +113,7 @@ class MedicionCreate(MedicionBase):
 # SCHEMA DE SALIDA (RESPONSE)
 # ==========================================================
 # Representa los datos que devuelve la API
-class MedicionResponse(MedicionBase):
+class MeasurementResponse(MeasurementBase):
 
     # Devolvemos también la estación asociada
     estacion_id: int
