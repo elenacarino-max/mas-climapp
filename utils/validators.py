@@ -70,10 +70,13 @@ def validate_weather_data(data):
     # Comprobamos que el input sea válido
     if not data or not isinstance(data, dict):
         return False
+    
+    # Aceptamos tanto 'fecha_datos' (nuevo) como 'fecha' (tests antiguos)
+    fecha = data.get("fecha_datos") or data.get("fecha")
 
     return (
         # Campo obligatorio: la fecha debe existir y ser válida
-        validar_fecha(data.get("fecha_datos"))
+        validar_fecha(fecha)
 
         # Campos opcionales:
         # Si hay valor → validamos
