@@ -114,7 +114,6 @@ class Medicion(Base):
     humedad     = Column(Float, nullable=True)  # en porcentaje (0-100)
     viento      = Column(Float, nullable=True)  # en km/h
     lluvia      = Column(Float, nullable=True)  # en mm
-    presion     = Column(Float, nullable=True)  # en hPa
 
     # Timestamp UTC de cuándo se insertó este registro en la BD.
     # Lo usa el ETL para el log de trazabilidad (requisito del checklist del P3).
