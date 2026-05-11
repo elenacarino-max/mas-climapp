@@ -20,7 +20,7 @@ from utils.validators import (
 # ==========================================================
 # Aquí definimos los campos comunes a una medición
 # Se reutiliza tanto en entrada como en salida
-class MeasurementBase(BaseModel):
+class MedicionBase(BaseModel):
 
     # Clave foránea que conecta con la tabla zonas (estaciones meteorológicas)
     # # ID de la zona a la que pertenece la medición (lo envía el usuario) 
@@ -46,7 +46,7 @@ class MeasurementBase(BaseModel):
 # SCHEMA DE ENTRADA (CREATE)
 # ==========================================================
 # Representa los datos que envía el usuario a la API
-class MeasurementCreate(MeasurementBase):
+class MedicionCrear(MedicionBase):
 
     """
     Schema usado para crear una nueva medición.
@@ -124,7 +124,7 @@ class MeasurementCreate(MeasurementBase):
 # ==========================================================
 # SCHEMA DE SALIDA (RESPONSE)
 # ==========================================================
-class MeasurementResponse(MeasurementBase):
+class MedicionRespuesta(MedicionBase):
 
     """
     Schema usado para devolver una medición desde la API.

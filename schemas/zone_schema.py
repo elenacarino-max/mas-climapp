@@ -2,7 +2,7 @@ from pydantic import BaseModel, ConfigDict
 
 
 # Clase base con los campos comunes de una zona
-class ZoneBase(BaseModel):
+class ZonaBase(BaseModel):
     """
     Representa una zona geográfica (municipio + estación meteorológica).
 
@@ -18,7 +18,7 @@ class ZoneBase(BaseModel):
 
 
 # Para crear una nueva zona
-class ZoneCreate(ZoneBase):
+class ZonaCrear(ZonaBase):
     """
     Se usa cuando queremos crear una zona (POST).
 
@@ -28,7 +28,7 @@ class ZoneCreate(ZoneBase):
 
 
 # Para actualizar una zona
-class ZoneUpdate(BaseModel):
+class ZonaActualizar(ZonaBase):
     """
     Se usa para actualizar una zona existente (PUT/PATCH).
 
@@ -42,7 +42,7 @@ class ZoneUpdate(BaseModel):
 
 
 # Para devolver datos al cliente
-class ZoneResponse(ZoneBase):
+class ZonaRespuesta(ZonaBase):
     """
     Se usa en las respuestas de la API (GET).
 
