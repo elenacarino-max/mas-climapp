@@ -56,16 +56,31 @@ def validar_lluvia(valor):
 
 # --- FUNCIÓN DE INTEGRACIÓN ---
 def validate_weather_data(data):
+
     """
-    Isabella, uso tu lógica de all() para validar el paquete completo.
+    Valida un registro climático completo.
+
+    Política aplicada:
+    - La fecha es obligatoria.
+    - Los datos meteorológicos (temperatura, humedad, viento, lluvia) son opcionales.
+    - Si un campo viene con valor → se valida.
+    - Si un campo viene como None → se ignora (no se considera error).
     """
+        
+    # Comprobamos que el input sea válido
     if not data or not isinstance(data, dict):
         return False
-        
-    return all([
-        validar_fecha(data.get("fecha_datos")),
-        validar_temperatura(data.get("temperatura")),
-        validar_humedad(data.get("humedad")),
-        validar_viento(data.get("viento")),
-        validar_lluvia(data.get("lluvia"))
-    ])
+
+    return (
+        # Campo obligatorio: la fecha debe existir y ser válida
+        validar_fecha(data.get("fecha_datos"))
+
+        # Campos opcionales:
+        # Si hay valor → validamos
+        # Si es None → lo aceptamos (no se sustituye por 0 según la política del equipo)
+
+        and (data.get("temperatura") is None or validar_temperatura(data.get("temperatura")))
+        and (data.get("humedad") is None or validar_humedad(data.get("humedad")))
+        and (data.get("viento") is None or validar_viento(data.get("viento")))
+        and (data.get("lluvia") is None or validar_lluvia(data.get("lluvia")))
+    )
