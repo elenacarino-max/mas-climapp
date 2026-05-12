@@ -1,6 +1,9 @@
 # Para manejar fechas reales (created_at) que vienen de la base de datos
 from datetime import datetime  
 
+# Importamos la función centralizada para validar fechas (evita duplicar lógica)
+from utils.datetime_utils import validar_fecha
+
 # Importamos BaseModel para crear los schemas (estructuras de datos)
 # y field_validator para validar automáticamente los campos
 from pydantic import BaseModel, ConfigDict, field_validator
@@ -66,6 +69,22 @@ class MedicionCrear(MedicionBase):
             raise ValueError("El ID de zona debe ser mayor que 0")
         return value
 
+
+    # ---------------------------------------------------------
+    # VALIDACIÓN DE FECHA DE LOS DATOS
+    # ---------------------------------------------------------
+    @field_validator("fecha_datos")
+    @classmethod
+    def check_fecha_datos(cls, value):
+        """
+        Valida que fecha_datos tenga un formato correcto antes de crear
+        una nueva medición.
+        """
+
+        if not validar_fecha(value):
+            raise ValueError("La fecha debe tener un formato válido")
+
+        return value
 
     # ------------------------------------------------------
     # VALIDACIÓN DE TEMPERATURA
