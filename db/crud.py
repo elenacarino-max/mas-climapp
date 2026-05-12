@@ -1,80 +1,94 @@
 from sqlalchemy.orm import Session
 from . import models
 
-# FUNCIONES DE ZONA
+# FUNCIONES DE ZONAS
 
-def obtener_zonas(db: Session):
-    return db.query(models.Zona).all()
+def obtener_zonas(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.Zona).offset(skip).limit(limit).all()
 
 def obtener_zona_por_id(db: Session, zona_id: int):
     return db.query(models.Zona).filter(models.Zona.id == zona_id).first()
 
-def obtener_zona_por_codigo(db: Session, cod_ine: str):
+def obtener_zona_por_cod_ine(db: Session, cod_ine: str):
     return db.query(models.Zona).filter(models.Zona.cod_ine == cod_ine).first()
 
-def crear_zona(db: Session, municipio: str, cod_ine: str, id_estacion: str, estacion_referencia: str):
-    # Check de duplicados
-    db_zona = obtener_zona_por_codigo(db, cod_ine)
+def crear_zona(db: Session, zona_data: dict):
+    # Evitar duplicados por cod_ine
+    db_zona = obtener_zona_por_cod_ine(db, cod_ine=zona_data.get("cod_ine"))
     if db_zona:
         return db_zona
-        
-    nueva_zona = models.Zona(
-        municipio=municipio,
-        cod_ine=cod_ine,
-        id_estacion=id_estacion,
-        estacion_referencia=estacion_referencia
-    )
+    
+    nueva_zona = models.Zona(**zona_data)
     db.add(nueva_zona)
     db.commit()
     db.refresh(nueva_zona)
     return nueva_zona
 
-# FUNCIONES DE MEDICIÓN
+def actualizar_zona(db: Session, zona_id: int, zona_data: dict):
+    db_zona = db.query(models.Zona).filter(models.Zona.id == zona_id).first()
+    if db_zona:
+        for key, value in zona_data.items():
+            setattr(db_zona, key, value)
+        db.commit()
+        db.refresh(db_zona)
+    return db_zona
 
-def obtener_medicion_por_id(db: Session, medicion_id: int):
-    return db.query(models.Medicion).filter(models.Medicion.id == medicion_id).first()
+def eliminar_zona(db: Session, zona_id: int):
+    db_zona = db.query(models.Zona).filter(models.Zona.id == zona_id).first()
+    if db_zona:
+        db.delete(db_zona)
+        db.commit()
+    return db_zona
+
+
+# FUNCIONES DE MEDICIONES
+
+def obtener_mediciones(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.Medicion).offset(skip).limit(limit).all()
 
 def crear_medicion(db: Session, medicion_data: dict, zona_id: int):
-    # Flexibilidad de fecha (Elena)
-    fecha = medicion_data.get("fecha_datos") or medicion_data.get("fecha")
+    # Lógica segura para valores 0 y mapeo de campos evitando el error del 'or'
+    temp = medicion_data.get("temperatura")
+    if temp is None:
+        temp = medicion_data.get("temperatura_max")
+        
+    precip = medicion_data.get("precipitacion")
+    if precip is None:
+        precip = medicion_data.get("lluvia")
+
+    # Manejo de fecha
+    fecha = medicion_data.get("fecha_datos")
+    if fecha is None:
+        fecha = medicion_data.get("fecha")
     
-    # Mapeo de campos reales del modelo
-    # Usamos .get() con alternativas para que no falle use el nombre que use la API
+    if fecha is None:
+        # Si no hay fecha en ningún campo, no podemos crear la medición
+        return None
+
     nueva_medicion = models.Medicion(
         zona_id=zona_id,
         fecha_datos=fecha,
-        temperatura=medicion_data.get("temperatura") or medicion_data.get("temperatura_max"),
-        lluvia=medicion_data.get("lluvia") or medicion_data.get("precipitacion"),
-        humedad=medicion_data.get("humedad"),
-        viento=medicion_data.get("viento")
+        temperatura=temp,
+        precipitacion=precip
+        # 'presion' no se incluye porque no existe en models.py
     )
-    # Se eliminan 'presion' y 'temperatura_min' porque no existen en models.py
-    
     db.add(nueva_medicion)
     db.commit()
     db.refresh(nueva_medicion)
     return nueva_medicion
 
 def actualizar_medicion(db: Session, medicion_id: int, medicion_data: dict):
-    db_medicion = obtener_medicion_por_id(db, medicion_id)
+    db_medicion = db.query(models.Medicion).filter(models.Medicion.id == medicion_id).first()
     if db_medicion:
-        # Actualizamos solo los campos que vienen en el diccionario
-        if "temperatura" in medicion_data or "temperatura_max" in medicion_data:
-            db_medicion.temperatura = medicion_data.get("temperatura") or medicion_data.get("temperatura_max")
-        if "lluvia" in medicion_data or "precipitacion" in medicion_data:
-            db_medicion.lluvia = medicion_data.get("lluvia") or medicion_data.get("precipitacion")
-        
-        db_medicion.humedad = medicion_data.get("humedad", db_medicion.humedad)
-        db_medicion.viento = medicion_data.get("viento", db_medicion.viento)
-        
+        for key, value in medicion_data.items():
+            setattr(db_medicion, key, value)
         db.commit()
         db.refresh(db_medicion)
     return db_medicion
 
 def eliminar_medicion(db: Session, medicion_id: int):
-    db_medicion = obtener_medicion_por_id(db, medicion_id)
+    db_medicion = db.query(models.Medicion).filter(models.Medicion.id == medicion_id).first()
     if db_medicion:
         db.delete(db_medicion)
         db.commit()
-        return True
-    return False
+    return db_medicion
