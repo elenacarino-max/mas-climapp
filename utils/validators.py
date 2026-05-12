@@ -63,7 +63,7 @@ def validate_weather_data(data):
         return False
         
     return all([
-        validar_fecha(data.get("fecha")),
+        validar_fecha(data.get("fecha_datos")),
         validar_temperatura(data.get("temperatura")),
         validar_humedad(data.get("humedad")),
         validar_viento(data.get("viento")),
