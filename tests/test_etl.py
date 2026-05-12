@@ -14,13 +14,13 @@ def test_valores_nulos():
 
     # Datos de ejemplo con nulos
     datos_prueba = {
-        "municipio": ["Alicante", None, "Madrid", "Barcelona", "Valencia"],
-        "fecha": [
-            pd.NaT,
-            pd.Timestamp("2024-06-01 10:00:00"),
-            pd.Timestamp("2024-06-02 12:00:00"),
-            pd.Timestamp("2024-06-04 08:00:00"),
-            pd.Timestamp("2024-06-03 08:00:00")
+        "zona_id": [1, None, 2, 4, 3],
+        "fecha_datos": [
+                None,
+                "2024-06-01 10:00:00",
+                "2024-06-02 12:00:00",
+                "2024-06-04 08:00:00",
+                "2024-06-03 08:00:00"
         ],
         "temperatura": [25.5, 30.2, None, None, None],
         "humedad": [60.0, None, None, 55.0, None],
@@ -29,21 +29,19 @@ def test_valores_nulos():
     }
 
     df = pd.DataFrame(datos_prueba)
-    # Asegurar tipo datos
-    resultado = transformar_datos(df)
 
-
-    # ejecutar limpieza ETL
+    # ejecutar ETL
     limpiar_datos_df = limpiar_datos_nulos(df)
 
-    # comprobar que no quedan municipios nulos
-    assert limpiar_datos_df["municipio"].isnull().sum() == 0
+    # No quedan zona_id nulos
+    assert limpiar_datos_df["zona_id"].isnull().sum() == 0
 
-    # comprobar que no quedan fechas nulas
-    assert limpiar_datos_df["fecha"].isnull().sum() == 0
+    # No quedan fechas nulas
+    assert limpiar_datos_df["fecha_datos"].isnull().sum() == 0
+
     # comprobar que fecha es datetime
     assert pd.api.types.is_datetime64_any_dtype(
-        limpiar_datos_df["fecha"]
+        limpiar_datos_df["fecha_datos"]
     )
 
     # No debe existir ninguna fila con TODOS los valores meteorológicos nulos
@@ -53,47 +51,45 @@ def test_valores_nulos():
 
     assert filas_todo_nulo.sum() == 0
 
-    # Debe conservarse Barcelona porque tiene datos meteorológicos válidos
-    assert "Barcelona" in limpiar_datos_df["municipio"].values
+    # Debe eliminarse zona_id 1 por fecha nula
+    assert 1 not in limpiar_datos_df["zona_id"].values
+
+    # Debe eliminarse zona_id None por zona nula
+    assert limpiar_datos_df["zona_id"].isnull().sum() == 0
+
+    # Debe eliminarse zona_id 3 por todos los datos meterologicos nulos
+    assert 3 not in limpiar_datos_df["zona_id"].values
+
     # Comprobar que los NULL parciales se conservan como NULL
-    fila_barcelona = limpiar_datos_df[
-        limpiar_datos_df["municipio"] == "Barcelona"
+    assert 2 in limpiar_datos_df["zona_id"].values
+
+    # zona_id 2 debe conservarse
+    fila_zona_2 = limpiar_datos_df[
+        limpiar_datos_df["zona_id"] == 2
     ].iloc[0]
 
-    # temperatura sigue siendo NULL
-    assert pd.isnull(fila_barcelona["temperatura"])
+    # NULL parciales se mantienen
+    assert pd.isnull(fila_zona_2["temperatura"])
+    assert pd.isnull(fila_zona_2["humedad"])
+    assert pd.isnull(fila_zona_2["viento"])
+    # lluvia válida se conserva
+    assert pd.isnotnull(fila_zona_2["lluvia"])
+    assert fila_zona_2["lluvia"] == 5.0
 
-    # viento sigue siendo NULL
-    assert pd.isnull(fila_barcelona["viento"])
+    # zona_id 4 debe conservarse
+    assert 4 in limpiar_datos_df["zona_id"].values
 
-    # lluvia sigue siendo NULL
-    assert pd.isnull(fila_barcelona["lluvia"])
-
-    # humedad sigue siendo NULL
-    assert pd.isnotnull(fila_barcelona["humedad"])
-
-    # Debe conservarse Madrid porque tiene datos meteorológicos válidos
-    assert "Madrid" in limpiar_datos_df["municipio"].values
-    # Comprobar que los NULL parciales se conservan como NULL
-    fila_barcelona = limpiar_datos_df[
-        limpiar_datos_df["municipio"] == "Madrid"
+    fila_zona_4 = limpiar_datos_df[
+        limpiar_datos_df["zona_id"] == 4
     ].iloc[0]
 
-    # temperatura sigue siendo NULL
-    assert pd.isnull(fila_barcelona["temperatura"])
-
-    # viento sigue siendo NULL
-    assert pd.isnull(fila_barcelona["viento"])
-
-    # lluvia sigue siendo NULL
-    assert pd.isnotnull(fila_barcelona["lluvia"])
-
-    # humedad sigue siendo NULL
-    assert pd.isnull(fila_barcelona["humedad"])
-
-    # Valencia debe eliminarse porque todos los valores meteorológicos son nulos
-    assert "Valencia" not in limpiar_datos_df["municipio"].values
-
+    # NULL parciales se mantienen
+    assert pd.isnull(fila_zona_4["temperatura"])
+    assert pd.isnull(fila_zona_4["viento"])
+    assert pd.isnull(fila_zona_4["lluvia"])
+    # humedad válida se conserva
+    assert pd.isnotnull(fila_zona_4["humedad"])
+    assert fila_zona_4["humedad"] == 55.0
 
 
     #Comprobar que los descartados se han incluido en los logs. En el proceso de limpieza, se registran los casos de filas descartadas según lo definido.
@@ -102,19 +98,19 @@ def test_valores_nulos():
         contenido_log = log.read()
 
     # Validar registros descartados
-    assert "municipio nulo" in contenido_log
-    assert "fecha nula" in contenido_log
-    assert "todos los valores meteorológicos nulos" in contenido_log
+    assert "Registro eliminado por zona nula" in contenido_log
+    assert "Registro eliminado por fecha nula" in contenido_log
+    assert "Registro eliminado: todos los valores meteorológicos nulos" in contenido_log
 
 
     ##Comprobar duplicados en el ETL: si el proceso de limpieza funciona, no deberían quedar filas duplicadas en el DataFrame final.
-    #Se consideran duplicados aquellos registros que tengan el mismo municipio y la misma fecha de registro. En caso de encontrar duplicados, se eliminará la fila completa.
+    #Se consideran duplicados aquellos registros que tengan el mismo zona_id y la misma fecha de registro. En caso de encontrar duplicados, se eliminará la fila completa.
 
 def test_filas_duplicadas():
 
     datos_prueba = {
-        "municipio": ["Madrid", "Madrid", "Barcelona"],
-        "fecha": [
+        "zona_id": [1, 1, 2],
+        "fecha_datos": [
             pd.Timestamp("2024-06-01 10:00:00"),
             pd.Timestamp("2024-06-01 10:00:00"),
             pd.Timestamp("2024-06-02 12:00:00")
@@ -130,12 +126,18 @@ def test_filas_duplicadas():
     #Asegurar tipo datos
     resultado = transformar_datos(df)
 
-    # Comprobar que no hay duplicados. Solo debería guardarse Barcelona 11:00
-    duplicados = limpiar_datos_df.duplicated(
-        subset=["municipio", "fecha"]
+    # Comprobar que no hay duplicados
+    duplicados = resultado.duplicated(
+        subset=["zona_id", "fecha_datos"]
     )
 
     assert duplicados.sum() == 0
+
+    # Debe conservarse zona_id 2
+    assert 2 in resultado["zona_id"].values
+
+    # Solo debe quedar un registro para zona_id 1
+    assert (resultado["zona_id"] == 1).sum() == 1
 
     #Comprobar que los descartados se han incluido en los logs. En el proceso de limpieza, se registran los descartados por duplicidad según lo definido.
     # Leer log
@@ -146,13 +148,13 @@ def test_filas_duplicadas():
     assert "Duplicado eliminado" in contenido_log
 
 
-    ## Comprobar tipo de datos en el ETL: después de la limpieza, los tipos de datos deben ser consistentes con lo esperado.
+    ## Comprobar tipo de datos correctos en el ETL. 
 
 def test_tipos_datos():
 
     datos_prueba = {
-        "municipio": ["Madrid", "Barcelona"],
-        "fecha": [
+        "zona_id": [1, 2],
+        "fecha_datos": [
             "2024-06-01 10:00:00",
             "2024-06-02 12:00:00"
         ],
@@ -163,22 +165,20 @@ def test_tipos_datos():
     }
 
     df = pd.DataFrame(datos_prueba)
-    #Ejecutar ETL de transformar tipos de datos
+        #Ejecutar ETL de transformar tipos de datos
     resultado = transformar_datos(df)
 
-    # Comprobar que municipio es string
-    assert pd.api.types.is_string_dtype(
-        resultado["municipio"]
-    ) or pd.api.types.is_object_dtype(
-        resultado["municipio"]
+        # Comprobar que zona_id es entero
+    assert pd.api.types.is_integer_dtype(
+        resultado["zona_id"]
     )
 
-    # Comprobar que fecha tiene formato datetime
+        # Comprobar que fecha tiene formato datetime
     assert pd.api.types.is_datetime64_any_dtype(
-        resultado["fecha"]
+        resultado["fecha_datos"]
     )
 
-    # Comprobar que los datos meteorológicos son float
+        # Comprobar que los datos meteorológicos son float
     columnas_float = [
         "temperatura",
         "humedad",
@@ -191,13 +191,32 @@ def test_tipos_datos():
             resultado[columna]
         )
 
+
+        ##Comprobar que los errores de tipo se registran en los logs: 
+        #Si el proceso de transformación encuentra valores que no se pueden convertir al tipo esperado, estos casos deben ser registrados en el log con un mensaje de error específico.
+
+def test_tipos_invalidos_logs():
+
+    datos_prueba = {
+        "zona_id": ["zona_erronea"],
+        "fecha_datos": ["fecha_invalida"],
+        "temperatura": ["temp_error"],
+        "humedad": ["hum_error"],
+        "viento": ["viento_error"],
+        "lluvia": ["lluvia_error"]
+    }
+
+    df = pd.DataFrame(datos_prueba)
+
+    # Ejecutar ETL
+    resultado = transformar_datos(df)
+
     # Leer log
     with open("etllog.txt", "r", encoding="utf-8") as log:
         contenido_log = log.read()
 
-    #Comprobar que los descartados se han incluido en los logs. En el proceso de limpieza, se registran los descartados por tipo de dato según lo definido.
-    # Validar errores registrados
-    assert "Error convirtiendo municipio" in contenido_log
+    # Validar registro en los LOGS de registros rechazados por tipo incorrecto
+    assert "Error convirtiendo zona" in contenido_log
 
     assert "Error convirtiendo fecha" in contenido_log
 
