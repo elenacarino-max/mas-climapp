@@ -2,11 +2,26 @@ import pandas as pd
 import json
 import os
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from dotenv import load_dotenv
 
 load_dotenv()
-
 API_KEY = os.getenv("API_KEY")
+
+def obtener_sesion_con_reintentos():
+    """Configures a resilient connection with 3 retries and exponential backoff."""
+    session = requests.Session()
+    reintentos = Retry(
+        total=3,
+        backoff_factor=1,
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["GET"]
+    )
+    adaptador = HTTPAdapter(max_retries=reintentos)
+    session.mount("https://", adaptador)
+    session.mount("http://", adaptador)
+    return session
 
 def extraer_desde_api():
     if not API_KEY:
@@ -15,9 +30,11 @@ def extraer_desde_api():
         
     print("Paso 1: Solicitando acceso a AEMET...")
     url_aemet = "https://opendata.aemet.es/opendata/api/observacion/convencional/todas"
+    sesion = obtener_sesion_con_reintentos()
     
     try:
-        respuesta = requests.get(url_aemet, params={"api_key": API_KEY})
+        # Usar la sesión con reintentos en lugar de requests.get normal
+        respuesta = sesion.get(url_aemet, params={"api_key": API_KEY}, timeout=10)
         respuesta.raise_for_status() 
         
         respuesta_json = respuesta.json()
@@ -26,42 +43,25 @@ def extraer_desde_api():
             enlace_datos = respuesta_json.get("datos")
             print("Paso 2: Acceso concedido. Descargando los datos reales...")
             
-            # --- THE NEW SAFETY NET ---
-            # We add a timeout so it doesn't hang forever, and we verify the SSL
-            respuesta_datos = requests.get(enlace_datos, timeout=10)
+            # Usar la sesión con reintentos aquí también
+            respuesta_datos = sesion.get(enlace_datos, timeout=15)
             
-            # Check if AEMET sent a successful HTTP code (200)
-            if respuesta_datos.status_code != 200:
-                print(f"Error: AEMET falló en el Paso 2 con código HTTP {respuesta_datos.status_code}.")
-                return None
-                
             try:
-                # Attempt to parse the JSON
                 datos_climaticos = respuesta_datos.json()
             except ValueError:
-                # If it's not JSON (this is the Expecting value error!), print what it actually is
-                print("\nError: AEMET no envió un JSON válido. Esto es lo que envió en su lugar:\n")
-                print(respuesta_datos.text[:500]) # Print the first 500 characters
+                print("\nError: AEMET no envió un JSON válido.")
                 return None
             
-            # Convert to Pandas DataFrame
             df = pd.DataFrame(datos_climaticos)
-            print(f"Descargados {len(df)} registros totales de España.")
-            
             ruta_estaciones = "../config/estaciones_madrid.json"
             
             try:
                 with open(ruta_estaciones, 'r', encoding='utf-8') as f:
                     estaciones_madrid = json.load(f)
-                
                 idema_madrid = [estacion['idema'] for estacion in estaciones_madrid]
                 df_madrid = df[df['idema'].isin(idema_madrid)]
-                
-                print(f"Filtrado completado. Se encontraron {len(df_madrid)} registros de Madrid.")
                 return df_madrid
-                
             except FileNotFoundError:
-                print(f"Aviso: No se encontró {ruta_estaciones}. Devolviendo todos los datos.")
                 return df
                 
         else:
@@ -69,7 +69,7 @@ def extraer_desde_api():
             return None
             
     except Exception as e:
-        print(f"Ocurrió un error al consultar la API: {e}")
+        print(f"Ocurrió un error (incluso después de los reintentos): {e}")
         return None
 
 if __name__ == "__main__":
