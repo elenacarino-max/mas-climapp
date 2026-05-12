@@ -14,7 +14,7 @@ Después se puede abrir la documentación automática en:
     http://127.0.0.1:8000/docs
 """
 
-# Importamos FastAPI, que es la herramienta principal para crear la API
+# Importamos FastAPI, que es la herramienta principal para crear la API.
 from fastapi import FastAPI
 
 # Importamos los routers de la carpeta api.
@@ -25,7 +25,7 @@ from api.routes_zonas import router as zonas_router
 
 
 # Creamos la aplicación principal de FastAPI.
-# Aquí configuramos el título, la descripción y la versión que aparecerán en /docs.
+# Estos datos aparecerán en la documentación automática de Swagger.
 app = FastAPI(
     title="Mas ClimApp API",
     description="API REST para gestionar zonas y mediciones climáticas.",

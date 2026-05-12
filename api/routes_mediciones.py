@@ -5,17 +5,36 @@ Este archivo contiene los endpoints relacionados con las mediciones:
 consultar, crear, actualizar y borrar mediciones.
 
 IMPORTANTE:
-De momento usamos una lista en memoria como datos simulados.
-Más adelante, esta lista se sustituirá por llamadas reales al CRUD
-y a la base de datos.
+- Ya usamos el schema real MedicionCreate desde schemas/medicion_schema.py.
+- Todavía usamos datos simulados porque db/crud.py aún no tiene funciones CRUD.
+- Más adelante se sustituirá la lista mock por llamadas reales a la base de datos.
 """
 
+# Importamos APIRouter para crear rutas separadas del archivo principal.
+# Importamos HTTPException para devolver errores claros como 404.
+# Importamos status para usar códigos HTTP con nombres legibles.
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel
 
+# Importamos el schema real de mediciones.
+# Este schema valida los datos de entrada:
+# - estacion_id
+# - temperatura
+# - humedad
+# - viento
+# - lluvia
+from schemas.medicion_schema import MedicionCreate
+
+
+# ==========================================================
+# ROUTER DE MEDICIONES
+# ==========================================================
 
 # Creamos el router de mediciones.
-# Todas las rutas de este archivo empezarán por /mediciones.
+# prefix="/mediciones" significa que todas las rutas de este archivo
+# empezarán por /mediciones.
+#
+# tags=["Mediciones"] sirve para que Swagger agrupe estos endpoints
+# bajo el bloque "Mediciones".
 router = APIRouter(
     prefix="/mediciones",
     tags=["Mediciones"],
@@ -23,47 +42,23 @@ router = APIRouter(
 
 
 # ==========================================================
-# SCHEMAS TEMPORALES
-# ==========================================================
-# Estos modelos sirven para validar los datos que llegan a la API.
-# Son temporales hasta que el equipo cierre los schemas definitivos.
-
-
-class MedicionCreate(BaseModel):
-    """
-    Datos necesarios para crear una medición.
-
-    No incluimos id porque el sistema lo genera automáticamente.
-    """
-
-    estacion_id: int
-    temperatura: float
-    humedad: float
-    viento: float
-    lluvia: float
-
-
-class MedicionUpdate(BaseModel):
-    """
-    Datos para actualizar una medición.
-
-    De momento pedimos todos los campos.
-    Más adelante se puede separar PUT y PATCH si queréis permitir
-    actualizaciones parciales.
-    """
-
-    estacion_id: int
-    temperatura: float
-    humedad: float
-    viento: float
-    lluvia: float
-
-
-# ==========================================================
 # DATOS SIMULADOS
 # ==========================================================
+
 # Esta lista actúa como una base de datos temporal.
-# Cuando el CRUD esté terminado, esto se cambiará por funciones reales.
+#
+# IMPORTANTE:
+# Esto NO es la base de datos real.
+# Es una solución provisional para poder probar los endpoints
+# mientras db/crud.py todavía está vacío.
+#
+# Cuando exista el CRUD real, eliminaremos esta lista y llamaremos
+# a funciones como:
+# - obtener_mediciones()
+# - obtener_medicion_por_id()
+# - crear_medicion()
+# - actualizar_medicion()
+# - eliminar_medicion()
 
 mediciones = [
     {
@@ -89,12 +84,21 @@ mediciones = [
 # FUNCIONES AUXILIARES
 # ==========================================================
 
+# Estas funciones ayudan a no repetir código dentro de los endpoints.
+
+
 def buscar_medicion_por_id(medicion_id: int):
     """
     Busca una medición dentro de la lista simulada.
 
-    Si encuentra la medición, la devuelve.
-    Si no la encuentra, devuelve None.
+    Parámetros:
+        medicion_id: ID de la medición que queremos encontrar.
+
+    Devuelve:
+        - La medición si existe.
+        - None si no existe.
+
+    Más adelante esta función se sustituirá por una función CRUD real.
     """
     for medicion in mediciones:
         if medicion["id"] == medicion_id:
@@ -103,9 +107,32 @@ def buscar_medicion_por_id(medicion_id: int):
     return None
 
 
+def generar_nuevo_id():
+    """
+    Genera un nuevo ID para una medición simulada.
+
+    Como todavía no usamos base de datos real en estos endpoints,
+    calculamos el siguiente ID a partir de la lista mock.
+
+    Si la lista está vacía, empezamos en 1.
+    """
+    if not mediciones:
+        return 1
+
+    return max(medicion["id"] for medicion in mediciones) + 1
+
+
 # ==========================================================
-# ENDPOINTS
+# ENDPOINTS DE MEDICIONES
 # ==========================================================
+
+# Aquí empieza realmente la parte de API REST.
+#
+# Cada endpoint combina:
+# - un verbo HTTP: GET, POST, PUT, DELETE
+# - una ruta: /mediciones/, /mediciones/{medicion_id}
+# - una función de Python
+
 
 @router.get("/")
 def listar_mediciones():
@@ -113,6 +140,12 @@ def listar_mediciones():
     GET /mediciones/
 
     Devuelve todas las mediciones existentes.
+
+    Estado actual:
+        Devuelve datos simulados.
+
+    Estado futuro:
+        Llamará al CRUD para consultar la base de datos real.
     """
     return mediciones
 
@@ -123,7 +156,11 @@ def obtener_medicion(medicion_id: int):
     GET /mediciones/{medicion_id}
 
     Devuelve una medición concreta según su ID.
-    Si no existe, devuelve un error 404.
+
+    Ejemplo:
+        /mediciones/1
+
+    Si la medición no existe, devuelve error 404.
     """
     medicion = buscar_medicion_por_id(medicion_id)
 
@@ -143,13 +180,25 @@ def crear_medicion(nueva_medicion: MedicionCreate):
 
     Crea una nueva medición.
 
-    Recibe los datos en formato JSON.
-    Devuelve código 201 porque se ha creado un recurso nuevo.
-    """
-    nuevo_id = max(medicion["id"] for medicion in mediciones) + 1
+    Recibe los datos en formato JSON y los valida usando el schema real
+    MedicionCreate de schemas/medicion_schema.py.
 
+    Ejemplo de body JSON:
+
+    {
+        "estacion_id": 103,
+        "temperatura": 24.8,
+        "humedad": 55.0,
+        "viento": 10.5,
+        "lluvia": 0.0
+    }
+
+    Devuelve:
+        - La medición creada.
+        - Código 201 porque se ha creado un recurso nuevo.
+    """
     medicion_creada = {
-        "id": nuevo_id,
+        "id": generar_nuevo_id(),
         "estacion_id": nueva_medicion.estacion_id,
         "temperatura": nueva_medicion.temperatura,
         "humedad": nueva_medicion.humedad,
@@ -163,13 +212,20 @@ def crear_medicion(nueva_medicion: MedicionCreate):
 
 
 @router.put("/{medicion_id}")
-def actualizar_medicion(medicion_id: int, datos_actualizados: MedicionUpdate):
+def actualizar_medicion(medicion_id: int, datos_actualizados: MedicionCreate):
     """
     PUT /mediciones/{medicion_id}
 
     Actualiza una medición completa.
 
-    Si la medición no existe, devuelve 404.
+    Ejemplo:
+        /mediciones/1
+
+    De momento usamos MedicionCreate también para actualizar,
+    porque todavía no existe un MedicionUpdate definitivo en
+    schemas/medicion_schema.py.
+
+    Si la medición no existe, devuelve error 404.
     """
     medicion = buscar_medicion_por_id(medicion_id)
 
@@ -195,7 +251,10 @@ def eliminar_medicion(medicion_id: int):
 
     Elimina una medición por ID.
 
-    Si no existe, devuelve 404.
+    Ejemplo:
+        /mediciones/1
+
+    Si la medición no existe, devuelve error 404.
     """
     medicion = buscar_medicion_por_id(medicion_id)
 
