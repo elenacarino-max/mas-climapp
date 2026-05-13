@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from . import models
+from utils.datetime_utils import parse_fecha
 
 # FUNCIONES DE ZONAS
 
@@ -72,6 +73,10 @@ def crear_medicion(db: Session, medicion_data: dict, zona_id: int):
         precip = medicion_data.get("precipitacion")
 
     fecha = medicion_data.get("fecha_datos") or medicion_data.get("fecha")
+    
+    fecha_limpia = parse_fecha(fecha)
+    if fecha_limpia:
+        fecha = fecha_limpia.date() # Nos quedamos solo con la fecha (sin hora) para la DB
     
     if fecha is None:
         return None
