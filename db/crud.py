@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from . import models
+from utils.datetime_utils import parse_fecha
 
 # FUNCIONES DE ZONAS
 
@@ -73,8 +74,14 @@ def crear_medicion(db: Session, medicion_data: dict, zona_id: int):
 
     fecha = medicion_data.get("fecha_datos") or medicion_data.get("fecha")
     
-    if fecha is None:
+    fecha_limpia = parse_fecha(fecha)
+    
+    # Comprobamos si la limpieza funcionó
+    if fecha_limpia is None:
         return None
+        
+    # Si funcionó, extraemos la fecha y sobreescribimos la variable
+    fecha = fecha_limpia.date()
 
     # Mapeo explícito y campos extra (humedad, viento)
     nueva_medicion = models.Medicion(
