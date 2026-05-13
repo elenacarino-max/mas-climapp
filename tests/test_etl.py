@@ -6,11 +6,12 @@ import pandas as pd
 #Si la temperatura, humedad, viento y lluvia son nulos, se eliminará la fila completa. Si al menos un valor es válido, se mantendrá la fila.
 #Traemos la función a probar. 
 
-from etl.transform import limpiar_datos_nulos
+from etl.transform import limpiar_datos_nulos, transformar_datos
+
 
 #Definir la función de test para la limpieza de nulos. En este caso, comprobamos que se eliminar las filas con nulos. ""
 
-def test_valores_nulos():
+def test_limpieza_datos_nulos(caplog):
 
     # Datos de ejemplo con nulos
     datos_prueba = {
@@ -93,20 +94,16 @@ def test_valores_nulos():
 
 
     #Comprobar que los descartados se han incluido en los logs. En el proceso de limpieza, se registran los casos de filas descartadas según lo definido.
-    # Leer log
-    with open("etllog.txt", "r", encoding="utf-8") as log:
-        contenido_log = log.read()
-
     # Validar registros descartados
-    assert "Registro eliminado por zona nula" in contenido_log
-    assert "Registro eliminado por fecha nula" in contenido_log
-    assert "Registro eliminado: todos los valores meteorológicos nulos" in contenido_log
+    assert "Registro eliminado por zona nula" in caplog.text
+    assert "Registro eliminado por fecha nula" in caplog.text
+    assert "Registro eliminado: todos los valores meteorológicos nulos" in caplog.text
 
 
     ##Comprobar duplicados en el ETL: si el proceso de limpieza funciona, no deberían quedar filas duplicadas en el DataFrame final.
     #Se consideran duplicados aquellos registros que tengan el mismo zona_id y la misma fecha de registro. En caso de encontrar duplicados, se eliminará la fila completa.
 
-def test_filas_duplicadas():
+def test_filas_duplicadas(caplog):
 
     datos_prueba = {
         "zona_id": [1, 1, 2],
@@ -140,12 +137,8 @@ def test_filas_duplicadas():
     assert (resultado["zona_id"] == 1).sum() == 1
 
     #Comprobar que los descartados se han incluido en los logs. En el proceso de limpieza, se registran los descartados por duplicidad según lo definido.
-    # Leer log
-    with open("etllog.txt", "r", encoding="utf-8") as log:
-        contenido_log = log.read()
-
     # Validar log duplicados
-    assert "Duplicado eliminado" in contenido_log
+    assert "Duplicado eliminado" in caplog.text
 
 
     ## Comprobar tipo de datos correctos en el ETL. 
@@ -195,7 +188,7 @@ def test_tipos_datos():
         ##Comprobar que los errores de tipo se registran en los logs: 
         #Si el proceso de transformación encuentra valores que no se pueden convertir al tipo esperado, estos casos deben ser registrados en el log con un mensaje de error específico.
 
-def test_tipos_invalidos_logs():
+def test_tipos_invalidos_logs(caplog):
 
     datos_prueba = {
         "zona_id": ["zona_erronea"],
@@ -211,19 +204,16 @@ def test_tipos_invalidos_logs():
     # Ejecutar ETL
     resultado = transformar_datos(df)
 
-    # Leer log
-    with open("etllog.txt", "r", encoding="utf-8") as log:
-        contenido_log = log.read()
-
     # Validar registro en los LOGS de registros rechazados por tipo incorrecto
-    assert "Error convirtiendo zona" in contenido_log
 
-    assert "Error convirtiendo fecha" in contenido_log
+    assert "Error convirtiendo zona" in caplog.text
 
-    assert "Error convirtiendo temperatura" in contenido_log
+    assert "Error convirtiendo fecha" in caplog.text
 
-    assert "Error convirtiendo humedad" in contenido_log
+    assert "Error convirtiendo temperatura" in caplog.text
 
-    assert "Error convirtiendo viento" in contenido_log
+    assert "Error convirtiendo humedad" in caplog.text
 
-    assert "Error convirtiendo lluvia" in contenido_log
+    assert "Error convirtiendo viento" in caplog.text
+
+    assert "Error convirtiendo lluvia" in caplog.text
