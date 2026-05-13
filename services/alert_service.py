@@ -21,42 +21,75 @@ class AlertService:
 
         alertas = []
 
-        try:
-            temp = float(registro_normalizado.get("temperatura", 0.0))
-            viento = float(registro_normalizado.get("viento", 0.0))
-            lluvia = float(registro_normalizado.get("lluvia", 0.0))
-            humedad = float(registro_normalizado.get("humedad", 0.0))
+# Obtenemos los valores del registro normalizado
+# IMPORTANTE: no convertimos None a 0 porque según la política del equipo
+# los datos faltantes se deben ignorar, no sustituir
 
-        except (TypeError, ValueError):
+
+        temp = registro_normalizado.get("temperatura")
+        viento = registro_normalizado.get("viento")
+        lluvia = registro_normalizado.get("lluvia")
+        humedad = registro_normalizado.get("humedad")
+
+
+        # =========================
+        # TEMPERATURA
+        # =========================
+        # Solo evaluamos si el dato existe (no es None)
+        if temp is not None:
+            temp = float(temp)
+
+
+            if temp >= 40.0:
+                alertas.append("ROJA_CALOR")
+            elif temp >= 35.0:
+                alertas.append("NARANJA_CALOR")
+            elif temp <= -5.0:
+                alertas.append("ROJA_FRIO")
+            elif temp <= 0.0:
+                alertas.append("NARANJA_FRIO")
+
+        # =========================
+        # VIENTO
+        # =========================
+        # Solo evaluamos si el dato existe (no es None)
+        if viento is not None:
+            viento = float(viento)
+
+            if viento > 70.0:
+                alertas.append("ROJA_VIENTO")
+        
+            elif viento > 40.0:
+                alertas.append("NARANJA_VIENTO")
+
+        # =========================
+        # LLUVIA
+        # =========================
+        # Solo evaluamos si el dato existe (no es None)
+
+        if lluvia is not None:
+            lluvia = float(lluvia)
+
+            if lluvia > 30.0:
+                alertas.append("ROJA_LLUVIA")
+            elif lluvia > 10.0:
+                alertas.append("NARANJA_LLUVIA")
+
+        # =========================
+        # HUMEDAD
+        # =========================
+        # Solo evaluamos si el dato existe (no es None)
+        if humedad is not None:
+            humedad = float(humedad)
+
+            if humedad >= 90:
+                alertas.append("NARANJA_HUMEDAD")
+
+        # Si no hay ningún dato meteorológico, no generamos alerta.
+        if temp is None and viento is None and lluvia is None and humedad is None:
             return []
 
-        # TEMPERATURA
-        if temp >= 40.0:
-            alertas.append("ROJA_CALOR")
-        elif temp >= 35.0:
-            alertas.append("NARANJA_CALOR")
-        elif temp <= -5.0:
-            alertas.append("ROJA_FRIO")
-        elif temp <= 0.0:
-            alertas.append("NARANJA_FRIO")
-
-        # VIENTO
-        if viento > 70.0:
-            alertas.append("ROJA_VIENTO")
-        elif viento > 40.0:
-            alertas.append("NARANJA_VIENTO")
-
-        # LLUVIA
-        if lluvia > 30.0:
-            alertas.append("ROJA_LLUVIA")
-        elif lluvia > 10.0:
-            alertas.append("NARANJA_LLUVIA")
-
-        # HUMEDAD
-        if humedad >= 90:
-            alertas.append("NARANJA_HUMEDAD")
-
-        # Si no hay ninguna alerta, devolvemos verde general
+        # Si hay datos pero no hay riesgo, devolvemos estado verde.
         if not alertas:
             alertas.append("VERDE")
 
