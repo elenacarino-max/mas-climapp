@@ -114,7 +114,7 @@ class Medicion(Base):
     humedad     = Column(Float, nullable=True)  # en porcentaje (0-100)
     viento      = Column(Float, nullable=True)  # en km/h
     lluvia      = Column(Float, nullable=True)  # en mm
-
+    
     # Timestamp UTC de cuándo se insertó este registro en la BD.
     # Lo usa el ETL para el log de trazabilidad (requisito del checklist del P3).
     # default=lambda: datetime.now(timezone.utc) → se calcula automáticamente al insertar,
