@@ -1,197 +1,276 @@
 """
-Rutas de zonas.
+Rutas API para gestionar zonas.
 
-Este archivo contiene los endpoints relacionados con las zonas:
-consultar, crear, actualizar y borrar zonas.
+Una zona representa un municipio o localización asociada a una estación meteorológica.
 
-IMPORTANTE:
-De momento usamos una lista en memoria como datos simulados.
-Más adelante se sustituirá por llamadas al CRUD y a la base de datos.
+Este archivo conecta los endpoints de FastAPI con las funciones del archivo db/crud.py.
 """
 
-from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, ConfigDict
+from sqlalchemy.orm import Session
+
+from db.database import get_db
+from db import crud
 
 
-# Creamos el router de zonas.
+# Router específico para zonas.
 # Todas las rutas de este archivo empezarán por /zonas.
 router = APIRouter(
     prefix="/zonas",
-    tags=["Zonas"],
+    tags=["Zonas"]
 )
 
 
-# ==========================================================
-# SCHEMAS TEMPORALES
-# ==========================================================
-# Estos modelos sirven para validar los datos que llegan a la API.
-# Son temporales hasta que el equipo cierre los schemas definitivos.
+# =========================================================
+# SCHEMAS PYDANTIC
+# =========================================================
+# Los schemas sirven para validar los datos que entran y
+# controlar los datos que salen en la respuesta de la API.
 
 
-class ZonaCreate(BaseModel):
+class ZonaBase(BaseModel):
     """
-    Datos necesarios para crear una zona.
+    Campos comunes de una zona.
 
-    No incluimos id porque el sistema lo genera automáticamente.
+    Estos nombres coinciden con los campos del modelo Zona en db/models.py:
+        municipio
+        cod_ine
+        id_estacion
+        estacion_referencia
     """
 
-    nombre: str
-    descripcion: str | None = None
+    municipio: str
+    cod_ine: str
+    id_estacion: str
+    estacion_referencia: str
+
+
+class ZonaCreate(ZonaBase):
+    """
+    Schema para crear una zona.
+
+    Hereda todos los campos de ZonaBase.
+    Al crear una zona, todos estos campos son obligatorios.
+    """
+
+    pass
 
 
 class ZonaUpdate(BaseModel):
     """
-    Datos necesarios para actualizar una zona.
+    Schema para actualizar una zona.
 
-    De momento pedimos todos los campos.
-    Más adelante se puede adaptar si se quiere permitir PATCH parcial.
+    Todos los campos son opcionales porque en una actualización
+    podemos cambiar solo municipio, solo cod_ine, solo estación, etc.
     """
 
-    nombre: str
-    descripcion: str | None = None
+    municipio: Optional[str] = None
+    cod_ine: Optional[str] = None
+    id_estacion: Optional[str] = None
+    estacion_referencia: Optional[str] = None
 
 
-# ==========================================================
-# DATOS SIMULADOS
-# ==========================================================
-# Esta lista actúa como una base de datos temporal.
-# Cuando el CRUD esté terminado, esto se cambiará por funciones reales.
-
-zonas = [
-    {
-        "id": 1,
-        "nombre": "Norte",
-        "descripcion": "Zona norte de la Comunidad de Madrid",
-    },
-    {
-        "id": 2,
-        "nombre": "Sur",
-        "descripcion": "Zona sur de la Comunidad de Madrid",
-    },
-    {
-        "id": 3,
-        "nombre": "Centro",
-        "descripcion": "Zona centro de la Comunidad de Madrid",
-    },
-]
-
-
-# ==========================================================
-# FUNCIONES AUXILIARES
-# ==========================================================
-
-def buscar_zona_por_id(zona_id: int):
+class ZonaResponse(ZonaBase):
     """
-    Busca una zona dentro de la lista simulada.
+    Schema de respuesta.
 
-    Si encuentra la zona, la devuelve.
-    Si no la encuentra, devuelve None.
+    Incluye el id, porque ese id lo genera la base de datos.
     """
-    for zona in zonas:
-        if zona["id"] == zona_id:
-            return zona
 
-    return None
+    id: int
+
+    # Permite que Pydantic convierta objetos SQLAlchemy en JSON.
+    model_config = ConfigDict(from_attributes=True)
 
 
-# ==========================================================
-# ENDPOINTS
-# ==========================================================
+# =========================================================
+# ENDPOINTS DE ZONAS
+# =========================================================
 
-@router.get("/")
-def listar_zonas():
+
+@router.get("/", response_model=list[ZonaResponse])
+def listar_zonas(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db)
+):
     """
-    GET /zonas/
+    Lista zonas existentes.
 
-    Devuelve todas las zonas disponibles.
+    URL:
+        GET /zonas/
+
+    Parámetros opcionales:
+        skip  → cuántos registros saltar
+        limit → cuántos registros devolver como máximo
     """
-    return zonas
+
+    return crud.obtener_zonas(db=db, skip=skip, limit=limit)
 
 
-@router.get("/{zona_id}")
-def obtener_zona(zona_id: int):
+@router.get("/cod-ine/{cod_ine}", response_model=ZonaResponse)
+def obtener_zona_por_cod_ine(
+    cod_ine: str,
+    db: Session = Depends(get_db)
+):
     """
-    GET /zonas/{zona_id}
+    Busca una zona por su código INE.
 
-    Devuelve una zona concreta según su ID.
-    Si no existe, devuelve un error 404.
+    URL:
+        GET /zonas/cod-ine/28079
+
+    Es útil porque cod_ine es único en el modelo Zona.
     """
-    zona = buscar_zona_por_id(zona_id)
+
+    zona = crud.obtener_zona_por_cod_ine(db=db, cod_ine=cod_ine)
 
     if zona is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Zona no encontrada",
+            detail=f"No existe ninguna zona con cod_ine {cod_ine}"
         )
 
     return zona
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
-def crear_zona(nueva_zona: ZonaCreate):
+@router.get("/{zona_id}", response_model=ZonaResponse)
+def obtener_zona_por_id(
+    zona_id: int,
+    db: Session = Depends(get_db)
+):
     """
-    POST /zonas/
+    Busca una zona por su id.
 
+    URL:
+        GET /zonas/1
+    """
+
+    zona = crud.obtener_zona_por_id(db=db, zona_id=zona_id)
+
+    if zona is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No existe ninguna zona con id {zona_id}"
+        )
+
+    return zona
+
+
+@router.post(
+    "/",
+    response_model=ZonaResponse,
+    status_code=status.HTTP_201_CREATED
+)
+def crear_zona(
+    zona: ZonaCreate,
+    db: Session = Depends(get_db)
+):
+    """
     Crea una nueva zona.
 
-    Recibe los datos en formato JSON.
-    Devuelve código 201 porque se ha creado un recurso nuevo.
+    URL:
+        POST /zonas/
+
+    Antes de crearla, comprobamos si ya existe una zona con el mismo cod_ine.
+    Esto evita chocar contra la restricción unique=True del modelo.
     """
-    nuevo_id = max(zona["id"] for zona in zonas) + 1
 
-    zona_creada = {
-        "id": nuevo_id,
-        "nombre": nueva_zona.nombre,
-        "descripcion": nueva_zona.descripcion,
-    }
+    zona_existente = crud.obtener_zona_por_cod_ine(
+        db=db,
+        cod_ine=zona.cod_ine
+    )
 
-    zonas.append(zona_creada)
-
-    return zona_creada
-
-
-@router.put("/{zona_id}")
-def actualizar_zona(zona_id: int, datos_actualizados: ZonaUpdate):
-    """
-    PUT /zonas/{zona_id}
-
-    Actualiza una zona completa.
-
-    Si la zona no existe, devuelve 404.
-    """
-    zona = buscar_zona_por_id(zona_id)
-
-    if zona is None:
+    if zona_existente:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Zona no encontrada",
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Ya existe una zona con cod_ine {zona.cod_ine}"
         )
 
-    zona["nombre"] = datos_actualizados.nombre
-    zona["descripcion"] = datos_actualizados.descripcion
+    # Convertimos el schema Pydantic a diccionario porque crud.crear_zona()
+    # espera recibir zona_data como dict.
+    zona_data = zona.model_dump()
 
-    return zona
+    return crud.crear_zona(db=db, zona_data=zona_data)
+
+
+@router.patch("/{zona_id}", response_model=ZonaResponse)
+def actualizar_zona(
+    zona_id: int,
+    zona: ZonaUpdate,
+    db: Session = Depends(get_db)
+):
+    """
+    Actualiza parcialmente una zona.
+
+    URL:
+        PATCH /zonas/1
+
+    Solo se modifican los campos que mandes en el body.
+    """
+
+    zona_actual = crud.obtener_zona_por_id(db=db, zona_id=zona_id)
+
+    if zona_actual is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No existe ninguna zona con id {zona_id}"
+        )
+
+    # exclude_unset=True hace que solo pasen los campos enviados.
+    zona_data = zona.model_dump(exclude_unset=True)
+
+    # Si se quiere cambiar el cod_ine, comprobamos que no esté usado por otra zona.
+    if "cod_ine" in zona_data:
+        zona_con_mismo_cod_ine = crud.obtener_zona_por_cod_ine(
+            db=db,
+            cod_ine=zona_data["cod_ine"]
+        )
+
+        if (
+            zona_con_mismo_cod_ine
+            and zona_con_mismo_cod_ine.id != zona_id
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Ya existe otra zona con cod_ine {zona_data['cod_ine']}"
+            )
+
+    zona_actualizada = crud.actualizar_zona(
+        db=db,
+        zona_id=zona_id,
+        zona_data=zona_data
+    )
+
+    return zona_actualizada
 
 
 @router.delete("/{zona_id}")
-def eliminar_zona(zona_id: int):
+def eliminar_zona(
+    zona_id: int,
+    db: Session = Depends(get_db)
+):
     """
-    DELETE /zonas/{zona_id}
+    Elimina una zona por id.
 
-    Elimina una zona por ID.
+    URL:
+        DELETE /zonas/1
 
-    Si no existe, devuelve 404.
+    En models.py tienes cascade='all, delete-orphan',
+    así que si se elimina una zona, se eliminan también sus mediciones asociadas.
     """
-    zona = buscar_zona_por_id(zona_id)
 
-    if zona is None:
+    zona_eliminada = crud.eliminar_zona(db=db, zona_id=zona_id)
+
+    if zona_eliminada is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Zona no encontrada",
+            detail=f"No existe ninguna zona con id {zona_id}"
         )
 
-    zonas.remove(zona)
-
     return {
-        "mensaje": f"Zona con ID {zona_id} eliminada correctamente"
+        "message": "Zona eliminada correctamente",
+        "zona_id": zona_id
     }

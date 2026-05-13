@@ -1,32 +1,65 @@
 """
-Rutas de comprobación de estado de la API.
+Rutas de salud de la API.
 
-Este archivo contiene endpoints sencillos para saber si la API
-está funcionando correctamente.
+Este archivo sirve para comprobar rápidamente que la API está viva
+y que la conexión con la base de datos funciona correctamente.
 """
 
-# APIRouter permite crear grupos de rutas separados del archivo principal.
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
+from db.database import get_db
 
 
-# Creamos un router para las rutas de salud de la API.
-# prefix="/health" significa que todas las rutas de este archivo
-# empezarán por /health.
+# Creamos un router específico para health.
+# prefix="/health" significa que todas estas rutas empezarán por /health.
 router = APIRouter(
     prefix="/health",
-    tags=["Health"],
+    tags=["Health"]
 )
 
 
 @router.get("/")
-def health_check():
+def comprobar_api():
     """
-    GET /health/
+    Endpoint básico para comprobar que la API responde.
 
-    Comprueba si la API está funcionando.
-    Este endpoint es útil para pruebas rápidas.
+    URL final:
+        GET /health/
+
+    Devuelve un mensaje sencillo si el servidor está funcionando.
     """
     return {
         "status": "ok",
-        "mensaje": "API funcionando correctamente",
+        "message": "API funcionando correctamente"
     }
+
+
+@router.get("/db")
+def comprobar_base_datos(db: Session = Depends(get_db)):
+    """
+    Endpoint para comprobar que la conexión con la base de datos funciona.
+
+    URL final:
+        GET /health/db
+
+    Depends(get_db):
+        FastAPI abre una sesión de base de datos,
+        la usa dentro de esta función y la cierra al terminar.
+    """
+    try:
+        # Consulta mínima para verificar que la BD responde.
+        db.execute(text("SELECT 1"))
+
+        return {
+            "status": "ok",
+            "database": "conectada"
+        }
+
+    except Exception as error:
+        # Si algo falla en la conexión, devolvemos un error 500.
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error de conexión con la base de datos: {error}"
+        )
