@@ -1,4 +1,4 @@
-import datetime
+from utils.datetime_utils import validar_fecha
 
 def comprobar_si_es_numero(valor, nombre):
     """
@@ -11,32 +11,7 @@ def comprobar_si_es_numero(valor, nombre):
     except (ValueError, TypeError):
         return None
 
-def validar_fecha(fecha_texto):
-    """
-    CAMBIO MÍO: He adaptado la función para que acepte el formato 
-    que configuramos en el JS (DD/MM/AAAA) y sea flexible con otros.
-    """
-    if not fecha_texto: 
-        return False
-    
-    # Limpiamos posibles restos de hora o formatos ISO
-    fecha_texto = fecha_texto.replace('T', ' ').split(' ')[0]
-    
-    # Lista de formatos sin hora (ya que la hemos quitado en el HTML/JS)
-    formatos_a_probar = [
-        "%d/%m/%Y",  # Formato actual: 29/04/2026
-        "%d-%m-%Y",  # Alternativa con guiones
-        "%Y-%m-%d"   # Formato ISO por si acaso
-    ]
-    
-    for formato in formatos_a_probar:
-        try:
-            datetime.datetime.strptime(fecha_texto, formato)
-            return True
-        except ValueError:
-            continue
-            
-    return False
+
 
 def validar_temperatura(valor):
     t = comprobar_si_es_numero(valor, "Temperatura")
