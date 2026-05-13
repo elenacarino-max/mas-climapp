@@ -75,11 +75,13 @@ def crear_medicion(db: Session, medicion_data: dict, zona_id: int):
     fecha = medicion_data.get("fecha_datos") or medicion_data.get("fecha")
     
     fecha_limpia = parse_fecha(fecha)
-    if fecha_limpia:
-        fecha = fecha_limpia.date() # Nos quedamos solo con la fecha (sin hora) para la DB
     
-    if fecha is None:
+    # Comprobamos si la limpieza funcionó
+    if fecha_limpia is None:
         return None
+        
+    # Si funcionó, extraemos la fecha y sobreescribimos la variable
+    fecha = fecha_limpia.date()
 
     # Mapeo explícito y campos extra (humedad, viento)
     nueva_medicion = models.Medicion(
