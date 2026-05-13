@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-def cargar_datos(df_limpio, nombre_tabla="medicion"):
+def cargar_datos(df_limpio, nombre_tabla="mediciones"):
     if not DATABASE_URL:
         logger.error("No se encontró DATABASE_URL en el archivo .env")
         return False
