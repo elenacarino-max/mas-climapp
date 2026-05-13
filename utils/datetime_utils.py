@@ -49,3 +49,32 @@ def validar_fecha(fecha_texto):
 
     # ❌ Si ninguno funciona → no es válida
     return False
+
+def parse_fecha(fecha_texto):
+    """
+    Convierte una fecha en distintos formatos a datetime.
+    Devuelve un datetime o None si no es válida.
+    """
+
+    if not fecha_texto:
+        return None
+
+    fecha_texto = str(fecha_texto)
+
+    # Limpiamos formato ISO con hora (ej: 2026-04-29T14:30)
+    fecha_texto = fecha_texto.replace("T", " ").split(" ")[0]
+
+    formatos_a_probar = [
+        "%d/%m/%Y",  # 29/04/2026
+        "%d-%m-%Y",  # 29-04-2026
+        "%Y-%m-%d"   # 2026-04-29
+    ]
+
+# Intentamos convertir y devolvemos el datetime directamente
+    for formato in formatos_a_probar:
+        try:
+            return datetime.datetime.strptime(fecha_texto, formato)
+        except ValueError:
+            continue
+
+    return None
