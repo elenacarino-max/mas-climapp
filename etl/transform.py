@@ -8,7 +8,7 @@ def limpiar_datos(df_bruto):
     logger.info("Iniciando la transformación de datos...")
     
     filas_antes = len(df_bruto)
-    df_limpio = df_bruto.drop_duplicates()
+    df_limpio = df_bruto.drop_duplicates(subset=['fecha_datos', 'zona_id'], keep='last')    
     if len(df_limpio) < filas_antes:
         logger.info(f"Duplicados eliminados: {filas_antes - len(df_limpio)}")
 
