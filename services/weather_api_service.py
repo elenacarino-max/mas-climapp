@@ -33,11 +33,11 @@ Eso lo hace:
 
 import logging
 from typing import Any, Dict, List, Optional
-
+from services.retry_service import get_retry_session
 from services.aemet_client import AemetClient
 from services.municipality_service import MunicipalityService
 from utils.helpers import calcular_distancia
-
+from services.retry_service import get_retry_session
 
 class WeatherAPIService:
     """
@@ -77,7 +77,8 @@ class WeatherAPIService:
         self.logger = logging.getLogger(__name__)
 
         self.aemet_client = aemet_client or AemetClient()
-
+        if aemet_client is None:
+            self.aemet_client.session = get_retry_session()
         self.municipality_service = (
             municipality_service
             or MunicipalityService(aemet_client=self.aemet_client)
