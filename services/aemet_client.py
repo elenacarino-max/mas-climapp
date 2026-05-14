@@ -5,36 +5,18 @@ Cliente de AEMET OpenData.
 
 Este archivo contiene únicamente la lógica de comunicación con la API externa
 de AEMET.
-
-Responsabilidades:
-------------------
-1. Leer la API Key de AEMET desde variables de entorno.
-2. Llamar a endpoints de AEMET.
-3. Resolver la doble petición típica de AEMET:
-   - primera petición: devuelve una URL en el campo "datos"
-   - segunda petición: descarga los datos reales desde esa URL
-4. Devolver datos crudos para que otros servicios los procesen.
-
-Este archivo NO:
-----------------
-- calcula estaciones cercanas,
-- normaliza datos para el frontend,
-- decide qué se muestra al usuario,
-- guarda registros.
 """
 
 import logging
 import os
 from typing import Any, Dict, List, Optional
 
+import requests
 from dotenv import load_dotenv
 
 from services.retry_service import get_retry_session
 
 
-# Cargamos el archivo .env también cuando este módulo se usa fuera de app.py.
-# Por ejemplo:
-# python -c "from services.aemet_client import AemetClient"
 load_dotenv()
 
 
@@ -44,14 +26,6 @@ class AemetClient:
     """
 
     def __init__(self):
-        """
-        Inicializa el cliente.
-
-        La clave debe estar en el archivo .env de la raíz del proyecto:
-
-            AEMET_API_KEY=tu_clave_aqui
-        """
-
         self.api_key = os.getenv("AEMET_API_KEY")
 
         if not self.api_key:
@@ -67,8 +41,6 @@ class AemetClient:
     def _headers(self) -> Dict[str, str]:
         """
         Cabeceras necesarias para llamar a AEMET.
-
-        AEMET espera la API key en la cabecera HTTP llamada api_key.
         """
 
         return {
@@ -80,20 +52,10 @@ class AemetClient:
         """
         Ejecuta la doble petición típica de AEMET.
 
-        Flujo:
-        ------
-        1. Llamamos al endpoint real de AEMET.
-        2. AEMET devuelve un JSON de metadatos con una URL en "datos".
-        3. Hacemos una segunda petición a esa URL.
-        4. Devolvemos el JSON real.
-
-        Ejemplo de primera respuesta de AEMET:
-        --------------------------------------
-        {
-            "descripcion": "...",
-            "estado": 200,
-            "datos": "https://opendata.aemet.es/opendata/sh/..."
-        }
+        1. Llama al endpoint de AEMET.
+        2. AEMET devuelve un JSON con una URL en el campo "datos".
+        3. Se hace una segunda petición a esa URL.
+        4. Se devuelve el JSON real.
         """
 
         url = f"{self.base_url}{endpoint}"
@@ -127,9 +89,34 @@ class AemetClient:
 
             return response_payload.json()
 
-        except Exception as error:
+        except requests.exceptions.Timeout as error:
             self.logger.error(
-                "Error llamando a AEMET. endpoint=%s error=%s",
+                "Timeout llamando a AEMET. endpoint=%s error=%s",
+                endpoint,
+                error,
+            )
+            return None
+
+        except requests.exceptions.ConnectionError as error:
+            self.logger.error(
+                "Error de conexión con AEMET. endpoint=%s error=%s",
+                endpoint,
+                error,
+            )
+            return None
+
+        except requests.exceptions.HTTPError as error:
+            self.logger.error(
+                "Error HTTP de AEMET. endpoint=%s status_code=%s error=%s",
+                endpoint,
+                getattr(error.response, "status_code", None),
+                error,
+            )
+            return None
+
+        except ValueError as error:
+            self.logger.error(
+                "Respuesta JSON inválida de AEMET. endpoint=%s error=%s",
                 endpoint,
                 error,
             )
@@ -142,15 +129,9 @@ class AemetClient:
         """
         Normaliza el código de municipio para endpoints de predicción.
 
-        El catálogo de municipios puede devolver códigos como:
-
-            id28079
-
-        Pero los endpoints de predicción municipal suelen esperar:
-
-            28079
-
-        Por eso quitamos el prefijo "id" si viene incluido.
+        Ejemplo:
+        - id28079 -> 28079
+        - 28079   -> 28079
         """
 
         codigo = str(codigo_municipio).strip()
@@ -163,12 +144,6 @@ class AemetClient:
     def obtener_observaciones_actuales(self) -> List[Dict[str, Any]]:
         """
         Obtiene todas las observaciones actuales de estaciones AEMET.
-
-        Endpoint:
-            /api/observacion/convencional/todas
-
-        Devuelve:
-            Lista de observaciones crudas de AEMET.
         """
 
         endpoint = "/api/observacion/convencional/todas"
@@ -179,17 +154,12 @@ class AemetClient:
 
         return []
 
-    def obtener_observacion_por_estacion(self, idema: str) -> List[Dict[str, Any]]:
+    def obtener_observacion_por_estacion(
+        self,
+        idema: str,
+    ) -> List[Dict[str, Any]]:
         """
         Obtiene observaciones actuales de una estación concreta.
-
-        Parámetro:
-        ----------
-        idema:
-            Identificador de estación AEMET.
-
-        Endpoint:
-            /api/observacion/convencional/datos/estacion/{idema}
         """
 
         endpoint = f"/api/observacion/convencional/datos/estacion/{idema}"
@@ -206,16 +176,6 @@ class AemetClient:
     ) -> Optional[Any]:
         """
         Obtiene la predicción diaria de un municipio.
-
-        Parámetro:
-        ----------
-        codigo_municipio:
-            Código de municipio. Puede venir como "id28079" o "28079".
-
-        Endpoint:
-            /api/prediccion/especifica/municipio/diaria/{municipio}
-
-        AEMET puede devolver dict o list, por eso aceptamos ambos.
         """
 
         codigo_prediccion = self._normalizar_codigo_municipio_para_prediccion(
@@ -242,16 +202,6 @@ class AemetClient:
     ) -> Optional[Any]:
         """
         Obtiene la predicción horaria de un municipio.
-
-        Parámetro:
-        ----------
-        codigo_municipio:
-            Código de municipio. Puede venir como "id28079" o "28079".
-
-        Endpoint:
-            /api/prediccion/especifica/municipio/horaria/{municipio}
-
-        AEMET puede devolver dict o list, por eso aceptamos ambos.
         """
 
         codigo_prediccion = self._normalizar_codigo_municipio_para_prediccion(
@@ -275,12 +225,6 @@ class AemetClient:
     def obtener_municipios(self) -> List[Dict[str, Any]]:
         """
         Obtiene el catálogo de municipios desde AEMET.
-
-        Endpoint:
-            /api/maestro/municipios
-
-        Lo usamos para resolver:
-            coordenadas -> municipio -> código AEMET
         """
 
         endpoint = "/api/maestro/municipios"
