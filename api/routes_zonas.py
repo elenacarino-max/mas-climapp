@@ -48,7 +48,7 @@ class ZonaBase(BaseModel):
     estacion_referencia: str
 
 
-class ZonaCreate(ZonaBase):
+class ZonaCrear(ZonaBase):
     """
     Schema para crear una zona.
 
@@ -59,7 +59,7 @@ class ZonaCreate(ZonaBase):
     pass
 
 
-class ZonaUpdate(BaseModel):
+class ZonaActualizar(BaseModel):
     """
     Schema para actualizar una zona.
 
@@ -165,7 +165,7 @@ def obtener_zona_por_id(
     status_code=status.HTTP_201_CREATED
 )
 def crear_zona(
-    zona: ZonaCreate,
+    zona: ZonaCrear,
     db: Session = Depends(get_db)
 ):
     """
@@ -193,13 +193,13 @@ def crear_zona(
     # espera recibir zona_data como dict.
     zona_data = zona.model_dump()
 
-    return crud.crear_zona(db=db, zona_data=zona_data)
+    return crud.ZonaCrear(db=db, zona_data=zona_data)
 
 
 @router.patch("/{zona_id}", response_model=ZonaResponse)
 def actualizar_zona(
     zona_id: int,
-    zona: ZonaUpdate,
+    zona: ZonaActualizar,
     db: Session = Depends(get_db)
 ):
     """
@@ -238,7 +238,7 @@ def actualizar_zona(
                 detail=f"Ya existe otra zona con cod_ine {zona_data['cod_ine']}"
             )
 
-    zona_actualizada = crud.actualizar_zona(
+    zona_actualizada = crud.ZonaActualizar(
         db=db,
         zona_id=zona_id,
         zona_data=zona_data
