@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from db.database import get_db
 from db import crud
 
-
+# El patrón de este archivo es muy similar al de routes_zonas.py, pero adaptado a las mediciones.
 router = APIRouter(
     prefix="/mediciones",
     tags=["Mediciones"]
