@@ -23,6 +23,8 @@ app = FastAPI(
     version="1.0.0"
 )
 
+create_tables()
+
 
 @app.on_event("startup")
 def iniciar_api():

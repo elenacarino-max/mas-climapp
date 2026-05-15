@@ -2,6 +2,7 @@
 # Este archivo comprueba el funcionamiento completo del CRUD (Create, Read, Update, Delete) del endpoint /mediciones.
 
 import pytest
+from uuid import uuid4
 from fastapi.testclient import TestClient
 from mas_climapp.main import app
 
@@ -10,22 +11,37 @@ from mas_climapp.main import app
 client = TestClient(app)
 
 #DATOS DE PRUEBA
+zona_data = {
+    "municipio": "Madrid Test Mediciones",
+    "cod_ine": f"28079{uuid4().hex[:6]}",
+    "id_estacion": "3195",
+    "estacion_referencia": "Retiro"
+}
+
 medicion_data = {
-    "estacion_id": 1,
-    "fecha_hora": "2024-06-01T12:00:00",
+    "fecha_datos": "2024-06-01",
     "temperatura": 25.5,
     "humedad": 60.0,
-    "presion": 1013.25
+    "viento": 5.0,
+    "lluvia": 0.0
 }
+
+
+def crear_zona_para_medicion():
+    response = client.post("/zonas/", json=zona_data)
+
+    if response.status_code == 409:
+        response = client.get(f"/zonas/cod-ine/{zona_data['cod_ine']}")
+
+    assert response.status_code in (200, 201)
+    return response.json()["id"]
 
 #####--------------------------------------------------------- C - CREATE - POST /mediciones/ ---------------------------------------------------------------------
 # Verificar que se puede crear una medición con datos válidos y que se devuelve la información correcta, incluyendo el ID generado automáticamente.
 
 def test_crear_medicion():
     # ARRANGE: Crear una zona para asociar la nueva medición, ya que la medición requiere un zona_id válido.
-    response_zona = client.post("/zonas/",json=zona_data)
-
-    zona_id = response_zona.json()["id"]
+    zona_id = crear_zona_para_medicion()
 
     nueva_medicion = {
         "zona_id": zona_id, 
@@ -56,9 +72,7 @@ def test_crear_medicion():
 def test_crear_medicion_tipo_dato_invalido():
 
         # ARRANGE: Crear una zona para asociar la nueva medición, ya que la medición requiere un zona_id válido.
-        response_zona = client.post("/zonas/",json=zona_data)
-
-        zona_id = response_zona.json()["id"]
+        zona_id = crear_zona_para_medicion()
 
         nueva_medicion_invalida = {
             "zona_id": zona_id, 
@@ -122,8 +136,7 @@ def test_crear_medicion_zona_inexistente():
 def test_leer_medicion():
 
     # ARRANGE: Crear una zona y una medición para luego leerla.
-    response_zona = client.post("/zonas/",json=zona_data)
-    zona_id = response_zona.json()["id"]
+    zona_id = crear_zona_para_medicion()
 
     nueva_medicion = {
         "zona_id": zona_id, 
@@ -178,8 +191,7 @@ def test_leer_medicion_id_invalido():
 def test_actualizar_medicion():
 
     # ARRANGE: Crear una zona y una medición para luego actualizarla.
-    response_zona = client.post("/zonas/",json=zona_data)
-    zona_id = response_zona.json()["id"]
+    zona_id = crear_zona_para_medicion()
 
     nueva_medicion = {
         "zona_id": zona_id, 
@@ -191,7 +203,7 @@ def test_actualizar_medicion():
 
     # ACT: Enviar petición PATCH al endpoint /mediciones/{id} con los datos actualizados.
     medicion_actualizada = {
-        "fecha_datos": "2024-06-01T15:00:00",
+        "fecha_datos": "2024-06-02",
         "temperatura": 28.0,
         "humedad": 55.0,
         "viento": 10.0,
@@ -218,8 +230,7 @@ def test_actualizar_medicion():
 def test_actualizar_medicion_datos_invalidos():
     
     # ARRANGE: Crear una zona y una medición para luego intentar actualizarla con datos inválidos.
-    response_zona = client.post("/zonas/",json=zona_data)
-    zona_id = response_zona.json()["id"]
+    zona_id = crear_zona_para_medicion()
 
     nueva_medicion = {
         "zona_id": zona_id, 
@@ -231,7 +242,7 @@ def test_actualizar_medicion_datos_invalidos():
 
     # ACT: Intentar actualizar la medición con datos inválidos.
     medicion_invalida = {
-        "fecha_datos": "2024-06-01T15:00:00",
+        "fecha_datos": "2024-06-02",
         "temperatura": "no es un número",  # Valor inválido
         "humedad": 55.0,
         "viento": 10.0,
@@ -264,8 +275,7 @@ def test_actualizar_medicion_inexistente():
 def test_eliminar_medicion():
 
     # ARRANGE: Crear una zona y una medición para luego eliminarla.
-    response_zona = client.post("/zonas/",json=zona_data)
-    zona_id = response_zona.json()["id"]
+    zona_id = crear_zona_para_medicion()
 
     nueva_medicion = {
         "zona_id": zona_id, 
