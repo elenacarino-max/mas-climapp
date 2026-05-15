@@ -193,7 +193,7 @@ def crear_zona(
     # espera recibir zona_data como dict.
     zona_data = zona.model_dump()
 
-    return crud.ZonaCrear(db=db, zona_data=zona_data)
+    return crud.crear_zona(db=db, zona_data=zona_data)
 
 
 @router.patch("/{zona_id}", response_model=ZonaResponse)
@@ -238,7 +238,7 @@ def actualizar_zona(
                 detail=f"Ya existe otra zona con cod_ine {zona_data['cod_ine']}"
             )
 
-    zona_actualizada = crud.ZonaActualizar(
+    zona_actualizada = crud.actualizar_zona(
         db=db,
         zona_id=zona_id,
         zona_data=zona_data

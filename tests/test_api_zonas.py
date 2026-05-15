@@ -2,6 +2,7 @@
 ## Test automátiocos para verificar los endpoints de la API de zonas, que es la que se encarga de devolver las zonas climáticas de una ciudad dada.
 
 import pytest
+from uuid import uuid4
 # Cliente HTTP de testing FastAPI
 from fastapi.testclient import TestClient
 # Importamos la aplicación FastAPI
@@ -15,10 +16,20 @@ client = TestClient(app)
 # Crear datos de prueba para una zona climática
 zona_data = {
     "municipio": "Madrid",
-    "cod_ine": "28079",
+    "cod_ine": f"28079{uuid4().hex[:6]}",
     "id_estacion": "3195",
     "estacion_referencia": "Retiro"
 }
+
+
+def crear_o_obtener_zona():
+    response = client.post("/zonas/", json=zona_data)
+
+    if response.status_code == 409:
+        response = client.get(f"/zonas/cod-ine/{zona_data['cod_ine']}")
+
+    assert response.status_code in (200, 201)
+    return response.json()
 
 
 ####------------------------------------------ C- CREATE - POST /zonas/ ---------------------------------------------------------------------
@@ -123,11 +134,7 @@ def test_obtener_zonas():
 def test_obtener_zona_por_id():
 
     # ARRANGE: Crear una zona de prueba para obtener su ID
-    response_crear = client.post(
-        "/zonas/",
-        json=zona_data
-    )
-    zona_id = response_crear.json()["id"]
+    zona_id = crear_o_obtener_zona()["id"]
 
     # ACT : Enviar una solicitud GET para obtener la zona climática por su ID
     response = client.get(f"/zonas/{zona_id}")
