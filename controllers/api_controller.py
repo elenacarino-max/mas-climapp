@@ -15,7 +15,7 @@ Responsabilidad de este archivo:
 2. Validar que vienen latitud y longitud.
 3. Llamar al servicio de clima.
 4. Normalizar la respuesta.
-5. Guardar el registro en JSON.
+5. Guardar un resumen del registro en SQL.
 6. Devolver la respuesta al frontend.
 
 Importante:
@@ -34,7 +34,8 @@ import logging
 
 from flask import Blueprint, jsonify, request
 
-from repositories.json_repository import guardar_registro
+from db import crud
+from db.database import SessionLocal, create_tables
 from services.normalizer_service import normalizar_datos_aemet
 from services.weather_api_service import obtener_clima_por_coordenadas
 
@@ -42,6 +43,90 @@ from services.weather_api_service import obtener_clima_por_coordenadas
 api_bp = Blueprint("api", __name__)
 
 logger = logging.getLogger(__name__)
+
+
+def _normalizar_cod_ine(codigo_municipio):
+    if not codigo_municipio:
+        return None
+
+    codigo = str(codigo_municipio).strip()
+
+    if codigo.startswith("id"):
+        return codigo[2:]
+
+    return codigo
+
+
+def _guardar_resumen_en_sql(data):
+    """
+    Guarda solo los campos necesarios para el modelo SQL actual.
+
+    Si falta información mínima para construir la zona, no bloquea la respuesta
+    de la API: devuelve False y deja el aviso en logs.
+    """
+
+    municipio_detectado = data.get("municipio_detectado")
+    if not isinstance(municipio_detectado, dict):
+        municipio_detectado = {}
+
+    cod_ine = _normalizar_cod_ine(
+        municipio_detectado.get("codigo") or data.get("codigo_municipio")
+    )
+
+    id_estacion = data.get("id_estacion")
+
+    if not cod_ine or not id_estacion:
+        logger.warning(
+            "No se guarda medición en SQL: faltan cod_ine o id_estacion. "
+            "cod_ine=%s id_estacion=%s",
+            cod_ine,
+            id_estacion,
+        )
+        return False
+
+    create_tables()
+    db = SessionLocal()
+
+    try:
+        zona = crud.obtener_zona_por_cod_ine(db=db, cod_ine=cod_ine)
+
+        if zona is None:
+            zona = crud.crear_zona(
+                db=db,
+                zona_data={
+                    "municipio": (
+                        municipio_detectado.get("nombre")
+                        or data.get("municipio")
+                        or data.get("ciudad")
+                        or "Ubicación detectada"
+                    ),
+                    "cod_ine": cod_ine,
+                    "id_estacion": str(id_estacion),
+                    "estacion_referencia": data.get("estacion") or str(id_estacion),
+                },
+            )
+
+        medicion = crud.crear_medicion(
+            db=db,
+            zona_id=zona.id,
+            medicion_data={
+                "fecha_datos": data.get("fecha") or "fecha_no_disponible",
+                "temperatura": data.get("temperatura"),
+                "humedad": data.get("humedad"),
+                "viento": data.get("viento"),
+                "lluvia": data.get("lluvia"),
+            },
+        )
+
+        return medicion is not None
+
+    except Exception:
+        db.rollback()
+        logger.exception("No se pudo guardar el registro climático en SQL.")
+        return False
+
+    finally:
+        db.close()
 
 
 @api_bp.route("/api/clima", methods=["GET"])
@@ -169,15 +254,15 @@ def api_clima():
         }
 
         # ---------------------------------------------------------
-        # 5. Guardar registro
+        # 5. Guardar resumen del registro en SQL
         # ---------------------------------------------------------
         #
         # Si el guardado falla, no rompemos la respuesta al usuario.
         # Solo añadimos una advertencia.
-        guardado_correcto = guardar_registro(data)
+        guardado_correcto = _guardar_resumen_en_sql(data)
 
         if not guardado_correcto:
-            logger.warning("No se pudo guardar el registro climático en JSON.")
+            logger.warning("No se pudo guardar el registro climático en SQL.")
             data["warning"] = "Datos obtenidos, pero no se pudieron guardar."
 
         # ---------------------------------------------------------
@@ -192,11 +277,11 @@ def api_clima():
             {
                 "error": "Error interno al consultar clima",
                 "detalle": str(error),
-                "temperatura": 0,
+                "temperatura": None,
                 "ciudad": "Error de conexión",
-                "humedad": 0,
-                "viento": 0,
-                "lluvia": 0,
+                "humedad": None,
+                "viento": None,
+                "lluvia": None,
                 "alertas": [],
             }
         ), 500

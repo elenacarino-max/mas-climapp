@@ -1,5 +1,6 @@
 # Para manejar fechas reales (created_at) que vienen de la base de datos
-from datetime import datetime  
+from datetime import datetime
+from typing import Optional
 
 # Importamos BaseModel para crear los schemas (estructuras de datos)
 # y field_validator para validar automáticamente los campos
@@ -30,16 +31,16 @@ class MedicionBase(BaseModel):
     fecha_datos: str
 
     # Temperatura registrada (número decimal)
-    temperatura: float
+    temperatura: Optional[float] = None
 
     # Humedad registrada (número decimal)
-    humedad: float
+    humedad: Optional[float] = None
 
     # Velocidad del viento (número decimal)
-    viento: float
+    viento: Optional[float] = None
 
     # Cantidad de lluvia (número decimal)
-    lluvia: float
+    lluvia: Optional[float] = None
 
 
 # ==========================================================
@@ -73,6 +74,8 @@ class MedicionCrear(MedicionBase):
     @field_validator("temperatura")
     @classmethod
     def check_temperatura(cls, value):
+        if value is None:
+            return value
 
         # Llamamos a la función existente que devuelve True o False
         if not validar_temperatura(value):
@@ -88,6 +91,8 @@ class MedicionCrear(MedicionBase):
     @field_validator("humedad")
     @classmethod
     def check_humedad(cls, value):
+        if value is None:
+            return value
 
         if not validar_humedad(value):
             raise ValueError("La humedad debe estar entre 0 y 100")
@@ -101,6 +106,8 @@ class MedicionCrear(MedicionBase):
     @field_validator("viento")
     @classmethod
     def check_viento(cls, value):
+        if value is None:
+            return value
 
         if not validar_viento(value):
             raise ValueError("El viento debe ser mayor o igual que 0")
@@ -114,6 +121,81 @@ class MedicionCrear(MedicionBase):
     @field_validator("lluvia")
     @classmethod
     def check_lluvia(cls, value):
+        if value is None:
+            return value
+
+        if not validar_lluvia(value):
+            raise ValueError("La lluvia debe ser mayor o igual que 0")
+
+        return value
+
+
+# ==========================================================
+# SCHEMA DE ENTRADA (UPDATE/PATCH)
+# ==========================================================
+class MedicionActualizar(BaseModel):
+    """
+    Schema usado para actualizar una medición existente.
+
+    Todos los campos son opcionales para soportar PATCH.
+    """
+
+    zona_id: Optional[int] = None
+    fecha_datos: Optional[str] = None
+    temperatura: Optional[float] = None
+    humedad: Optional[float] = None
+    viento: Optional[float] = None
+    lluvia: Optional[float] = None
+
+    @field_validator("zona_id")
+    @classmethod
+    def check_zona_id(cls, value):
+        if value is None:
+            return value
+
+        if value <= 0:
+            raise ValueError("El ID de zona debe ser mayor que 0")
+
+        return value
+
+    @field_validator("temperatura")
+    @classmethod
+    def check_temperatura(cls, value):
+        if value is None:
+            return value
+
+        if not validar_temperatura(value):
+            raise ValueError("La temperatura debe estar entre -50 y 60 grados")
+
+        return value
+
+    @field_validator("humedad")
+    @classmethod
+    def check_humedad(cls, value):
+        if value is None:
+            return value
+
+        if not validar_humedad(value):
+            raise ValueError("La humedad debe estar entre 0 y 100")
+
+        return value
+
+    @field_validator("viento")
+    @classmethod
+    def check_viento(cls, value):
+        if value is None:
+            return value
+
+        if not validar_viento(value):
+            raise ValueError("El viento debe ser mayor o igual que 0")
+
+        return value
+
+    @field_validator("lluvia")
+    @classmethod
+    def check_lluvia(cls, value):
+        if value is None:
+            return value
 
         if not validar_lluvia(value):
             raise ValueError("La lluvia debe ser mayor o igual que 0")

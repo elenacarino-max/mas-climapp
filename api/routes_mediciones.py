@@ -4,14 +4,16 @@
 Rutas API para gestionar mediciones climáticas.
 """
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 from db.database import get_db
 from db import crud
+from schemas.measurement_schema import (
+    MedicionActualizar,
+    MedicionCrear,
+    MedicionRespuesta,
+)
 
 # El patrón de este archivo es muy similar al de routes_zonas.py, pero adaptado a las mediciones.
 router = APIRouter(
@@ -20,39 +22,7 @@ router = APIRouter(
 )
 
 
-class MedicionBase(BaseModel):
-    fecha_datos: str
-    temperatura: Optional[float] = None
-    humedad: Optional[float] = None
-    viento: Optional[float] = None
-    lluvia: Optional[float] = None
-
-
-class MedicionCrear(BaseModel):
-    zona_id: int
-    fecha_datos: str
-    temperatura: Optional[float] = None
-    humedad: Optional[float] = None
-    viento: Optional[float] = None
-    lluvia: Optional[float] = None
-
-
-class MedicionActualizar(BaseModel):
-    fecha_datos: Optional[str] = None
-    temperatura: Optional[float] = None
-    humedad: Optional[float] = None
-    viento: Optional[float] = None
-    lluvia: Optional[float] = None
-
-
-class MedicionResponse(MedicionBase):
-    id: int
-    zona_id: int
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-@router.get("/", response_model=list[MedicionResponse])
+@router.get("/", response_model=list[MedicionRespuesta])
 def listar_mediciones(
     skip: int = 0,
     limit: int = 100,
@@ -65,7 +35,7 @@ def listar_mediciones(
     )
 
 
-@router.get("/{medicion_id}", response_model=MedicionResponse)
+@router.get("/{medicion_id}", response_model=MedicionRespuesta)
 def obtener_medicion(
     medicion_id: int,
     db: Session = Depends(get_db)
@@ -86,7 +56,7 @@ def obtener_medicion(
 
 @router.post(
     "/",
-    response_model=MedicionResponse,
+    response_model=MedicionRespuesta,
     status_code=status.HTTP_201_CREATED
 )
 def crear_medicion(
@@ -97,7 +67,7 @@ def crear_medicion(
 
     zona_id = medicion_data.pop("zona_id")
 
-    nueva_medicion = crud.MedicionCrear(
+    nueva_medicion = crud.crear_medicion(
         db=db,
         medicion_data=medicion_data,
         zona_id=zona_id
@@ -112,7 +82,7 @@ def crear_medicion(
     return nueva_medicion
 
 
-@router.patch("/{medicion_id}", response_model=MedicionResponse)
+@router.patch("/{medicion_id}", response_model=MedicionRespuesta)
 def actualizar_medicion(
     medicion_id: int,
     medicion: MedicionActualizar,
@@ -120,7 +90,7 @@ def actualizar_medicion(
 ):
     medicion_data = medicion.model_dump(exclude_unset=True)
 
-    medicion_actualizada = crud.MedicionActualizar(
+    medicion_actualizada = crud.actualizar_medicion(
         db=db,
         medicion_id=medicion_id,
         medicion_data=medicion_data

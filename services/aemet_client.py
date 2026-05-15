@@ -213,6 +213,29 @@ class AemetClient:
 
         return codigo
 
+    def _payload_como_lista(self, payload: Any, endpoint: str) -> List[Dict[str, Any]]:
+        if isinstance(payload, list):
+            return payload
+
+        self.logger.warning(
+            "Payload de AEMET descartado: se esperaba list. endpoint=%s tipo=%s",
+            endpoint,
+            type(payload).__name__,
+        )
+        return []
+
+    def _payload_como_prediccion(self, payload: Any, endpoint: str) -> Optional[Any]:
+        if isinstance(payload, (dict, list)):
+            return payload
+
+        self.logger.warning(
+            "Payload de predicción AEMET descartado: se esperaba dict/list. "
+            "endpoint=%s tipo=%s",
+            endpoint,
+            type(payload).__name__,
+        )
+        return None
+
     def obtener_observaciones_actuales(self) -> List[Dict[str, Any]]:
         """
         Obtiene todas las observaciones actuales de estaciones AEMET.
@@ -220,11 +243,7 @@ class AemetClient:
 
         endpoint = "/api/observacion/convencional/todas"
         payload = self._get_payload_from_endpoint(endpoint)
-
-        if isinstance(payload, list):
-            return payload
-
-        return []
+        return self._payload_como_lista(payload, endpoint)
 
     def obtener_observacion_por_estacion(
         self,
@@ -236,11 +255,7 @@ class AemetClient:
 
         endpoint = f"/api/observacion/convencional/datos/estacion/{idema}"
         payload = self._get_payload_from_endpoint(endpoint)
-
-        if isinstance(payload, list):
-            return payload
-
-        return []
+        return self._payload_como_lista(payload, endpoint)
 
     def obtener_prediccion_municipio_diaria(
         self,
@@ -259,14 +274,7 @@ class AemetClient:
         )
 
         payload = self._get_payload_from_endpoint(endpoint)
-
-        if isinstance(payload, dict):
-            return payload
-
-        if isinstance(payload, list):
-            return payload
-
-        return None
+        return self._payload_como_prediccion(payload, endpoint)
 
     def obtener_prediccion_municipio_horaria(
         self,
@@ -285,14 +293,7 @@ class AemetClient:
         )
 
         payload = self._get_payload_from_endpoint(endpoint)
-
-        if isinstance(payload, dict):
-            return payload
-
-        if isinstance(payload, list):
-            return payload
-
-        return None
+        return self._payload_como_prediccion(payload, endpoint)
 
     def obtener_municipios(self) -> List[Dict[str, Any]]:
         """
@@ -301,8 +302,4 @@ class AemetClient:
 
         endpoint = "/api/maestro/municipios"
         payload = self._get_payload_from_endpoint(endpoint)
-
-        if isinstance(payload, list):
-            return payload
-
-        return []
+        return self._payload_como_lista(payload, endpoint)

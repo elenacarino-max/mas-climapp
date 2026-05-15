@@ -1,13 +1,11 @@
 # api/routes_zonas.py
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 from db.database import get_db
 from db import crud
+from schemas.zone_schema import ZonaActualizar, ZonaCrear, ZonaRespuesta
 
 # El patrón de este archivo es muy similar al de routes_mediciones.py, pero adaptado a las zonas.
 router = APIRouter(
@@ -16,31 +14,7 @@ router = APIRouter(
 )
 
 
-class ZonaBase(BaseModel):
-    municipio: str
-    cod_ine: str
-    id_estacion: str
-    estacion_referencia: str
-
-
-class ZonaCrear(ZonaBase):
-    pass
-
-
-class ZonaActualizar(BaseModel):
-    municipio: Optional[str] = None
-    cod_ine: Optional[str] = None
-    id_estacion: Optional[str] = None
-    estacion_referencia: Optional[str] = None
-
-
-class ZonaResponse(ZonaBase):
-    id: int
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-@router.get("/", response_model=list[ZonaResponse])
+@router.get("/", response_model=list[ZonaRespuesta])
 def listar_zonas(
     skip: int = 0,
     limit: int = 100,
@@ -49,7 +23,7 @@ def listar_zonas(
     return crud.obtener_zonas(db=db, skip=skip, limit=limit)
 
 
-@router.get("/cod-ine/{cod_ine}", response_model=ZonaResponse)
+@router.get("/cod-ine/{cod_ine}", response_model=ZonaRespuesta)
 def obtener_zona_por_cod_ine(
     cod_ine: str,
     db: Session = Depends(get_db)
@@ -65,7 +39,7 @@ def obtener_zona_por_cod_ine(
     return zona
 
 
-@router.get("/{zona_id}", response_model=ZonaResponse)
+@router.get("/{zona_id}", response_model=ZonaRespuesta)
 def obtener_zona_por_id(
     zona_id: int,
     db: Session = Depends(get_db)
@@ -83,7 +57,7 @@ def obtener_zona_por_id(
 
 @router.post(
     "/",
-    response_model=ZonaResponse,
+    response_model=ZonaRespuesta,
     status_code=status.HTTP_201_CREATED
 )
 def crear_zona(
@@ -107,7 +81,7 @@ def crear_zona(
 
 # El patrón de este archivo es muy similar al de routes_mediciones.py, pero adaptado a las zonas.
 
-@router.patch("/{zona_id}", response_model=ZonaResponse)
+@router.patch("/{zona_id}", response_model=ZonaRespuesta)
 def actualizar_zona(
     zona_id: int,
     zona: ZonaActualizar,

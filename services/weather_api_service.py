@@ -33,11 +33,12 @@ Eso lo hace:
 
 import logging
 from typing import Any, Dict, List, Optional
+
 from services.retry_service import get_retry_session
 from services.aemet_client import AemetClient
 from services.municipality_service import MunicipalityService
 from utils.helpers import calcular_distancia
-from services.retry_service import get_retry_session
+
 
 class WeatherAPIService:
     """
