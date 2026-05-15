@@ -188,13 +188,23 @@ class MedicionActualizar(BaseModel):
 
     # Campos climáticos opcionales porque es PATCH.
     # Se puede actualizar uno, varios o todos los campos climáticos.
-    # No se actualizan zona_id ni fecha_datos porque identifican el origen y momento del registro.
+    # No se actualiza zona_id 
+    fecha_datos: Optional[str] = None
     temperatura: Optional[float] = None
     humedad: Optional[float] = None
     viento: Optional[float] = None
     lluvia: Optional[float] = None
 
+    @field_validator("fecha_datos")
+    @classmethod
+    def check_fecha_datos(cls, value):
+        if value is None:
+            return value
 
+        if not validar_fecha(value):
+            raise ValueError("La fecha debe tener un formato válido")
+
+        return value
 
     @field_validator("temperatura")
     @classmethod
@@ -278,3 +288,5 @@ class MedicionRespuesta(MedicionBase):
     # Fecha en la que se guardó el registro en la base de datos (se genera automáticamente)
     created_at: datetime | None = None
 
+    # Permite convertir objetos de SQLAlchemy a JSON automáticamente
+    model_config = ConfigDict(from_attributes=True)
