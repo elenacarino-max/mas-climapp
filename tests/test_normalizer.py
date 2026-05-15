@@ -163,10 +163,8 @@ def test_normalizar_datos_aemet_valores_faltantes(monkeypatch):
     """
     Este test comprueba qué pasa si AEMET devuelve un diccionario vacío.
 
-    La función tiene valores por defecto:
-    - estación: 'Desconocida'
-    - fecha: 'N/A'
-    - temperatura/humedad/viento/presión/lluvia: 0
+    La función usa None cuando AEMET no trae un dato real.
+    Así no confundimos "sin dato" con valores meteorológicos válidos como 0.
     """
 
     # Simulamos una lista con un registro vacío.
@@ -181,14 +179,14 @@ def test_normalizar_datos_aemet_valores_faltantes(monkeypatch):
     # Ejecutamos la función.
     result = normalizar_datos_aemet(data)
 
-    # Comprobamos los valores por defecto.
+    # Comprobamos los valores para datos no disponibles.
     assert result["estacion"] == "Ubicación Desconocida"
-    assert result["fecha"] == "N/A"
-    assert result["temperatura"] == 0
-    assert result["humedad"] == 0
-    assert result["viento"] == 0
-    assert result["presion"] == 0
-    assert result["lluvia"] == 0
+    assert result["fecha"] is None
+    assert result["temperatura"] is None
+    assert result["humedad"] is None
+    assert result["viento"] is None
+    assert result["presion"] is None
+    assert result["lluvia"] is None
     assert result["alertas"] == []
 
 
@@ -209,7 +207,7 @@ def test_normalizar_datos_aemet_error(monkeypatch):
     # pero cuya función get() falla a propósito.
     class BrokenData:
         def get(self, *args, **kwargs):
-            raise Exception("error forzado")
+            raise AttributeError("error forzado")
 
     # La función espera una lista o un diccionario.
     # Le pasamos una lista con este objeto roto para provocar el except.
