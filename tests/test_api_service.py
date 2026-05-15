@@ -5,94 +5,56 @@ import pytest
 from services.weather_api_service import WeatherAPIService
 
 
-# =====================================================
-# CLASE FAKE: respuesta HTTP simulada
-# =====================================================
+OBSERVACIONES_FAKE = [
+    {
+        "ubi": "Madrid-Retiro",
+        "lat": "40.4168",
+        "lon": "-3.7038",
+        "ta": "22.5",
+    },
+    {
+        "ubi": "Barcelona",
+        "lat": "41.3874",
+        "lon": "2.1686",
+        "ta": "20.1",
+    },
+]
 
-class FakeResponse:
+
+class FakeAemetClient:
     """
-    Esta clase simula una respuesta HTTP como las que devuelve requests.
-
-    La usamos para no llamar realmente a AEMET durante los tests.
+    Cliente AEMET falso para probar WeatherAPIService sin llamadas reales.
     """
 
-    def __init__(self, json_data):
-        """
-        Guardamos el JSON falso que queremos que devuelva esta respuesta.
-        """
-        self.json_data = json_data
+    def __init__(self, observaciones=None):
+        self.api_key = "fake_api_key"
+        self.base_url = "https://opendata.aemet.es/opendata"
+        self.observaciones = (
+            OBSERVACIONES_FAKE if observaciones is None else observaciones
+        )
 
-    def raise_for_status(self):
-        """
-        En requests, raise_for_status() lanza error si la respuesta HTTP falla.
+    def obtener_observaciones_actuales(self):
+        return self.observaciones
 
-        Aquí no queremos que falle, así que simplemente no hace nada.
-        """
+    def obtener_observacion_por_estacion(self, station_id):
+        return self.observaciones
+
+    def obtener_prediccion_municipio_diaria(self, codigo_municipio):
         return None
 
-    def json(self):
-        """
-        Simula el método .json() de requests.
+    def obtener_prediccion_municipio_horaria(self, codigo_municipio):
+        return None
 
-        Devuelve los datos falsos que hemos preparado.
-        """
-        return self.json_data
-
-
-# =====================================================
-# CLASE FAKE: sesión HTTP simulada
-# =====================================================
-
-class FakeSession:
-    """
-    Esta clase simula la sesión HTTP que usa WeatherAPIService.
-
-    En el código real, el servicio hace dos peticiones:
-    1. A la URL base de AEMET.
-    2. A la URL de datos que devuelve AEMET.
-
-    Aquí simulamos esas dos llamadas.
-    """
-
-    def __init__(self):
-        """
-        Contador para saber si estamos en la primera o segunda llamada.
-        """
-        self.calls = 0
-
-    def get(self, url, headers=None, timeout=20):
-        """
-        Simula el método get() de una sesión HTTP.
-
-        Dependiendo de cuántas veces se haya llamado, devuelve una cosa u otra.
-        """
-
-        self.calls += 1
-
-        # Primera llamada:
-        # AEMET no devuelve directamente los datos.
-        # Primero devuelve un JSON con una URL dentro de la clave "datos".
-        if self.calls == 1:
-            return FakeResponse({
-                "datos": "https://fake-url-aemet/datos"
-            })
-
-        # Segunda llamada:
-        # Simulamos la respuesta real con observaciones meteorológicas.
-        return FakeResponse([
+    def obtener_municipios(self):
+        return [
             {
-                "ubi": "Madrid-Retiro",
+                "id": "id28079",
+                "nombre": "Madrid",
+                "provincia": "Madrid",
                 "lat": "40.4168",
                 "lon": "-3.7038",
-                "ta": "22.5"
-            },
-            {
-                "ubi": "Barcelona",
-                "lat": "41.3874",
-                "lon": "2.1686",
-                "ta": "20.1"
             }
-        ])
+        ]
 
 
 # =====================================================
@@ -105,28 +67,10 @@ def api_service(monkeypatch):
     Esta fixture prepara una instancia de WeatherAPIService
     sin usar datos reales.
 
-    Hace dos cosas importantes:
-
-    1. Crea una API key falsa.
-       Así evitamos depender de un archivo .env real.
-
-    2. Sustituye get_retry_session() por una sesión falsa.
-       Así evitamos hacer llamadas reales a internet.
+    Inyecta un cliente AEMET falso para evitar llamadas reales a internet.
     """
 
-    # Simulamos que existe la variable de entorno AEMET_API_KEY.
-    # El servicio real la necesita para inicializarse.
-    monkeypatch.setenv("AEMET_API_KEY", "fake_api_key")
-
-    # Sustituimos get_retry_session por una función falsa
-    # que devuelve FakeSession.
-    monkeypatch.setattr(
-        "services.weather_api_service.get_retry_session",
-        lambda: FakeSession()
-    )
-
-    # Devolvemos el servicio ya preparado para los tests.
-    return WeatherAPIService()
+    return WeatherAPIService(aemet_client=FakeAemetClient())
 
 
 # =====================================================
@@ -139,11 +83,8 @@ def test_weather_api_service_init(api_service):
     cuando existe la variable AEMET_API_KEY.
     """
 
-    assert api_service.api_key == "fake_api_key"
-
-    assert api_service.base_url == (
-        "https://opendata.aemet.es/opendata/api/observacion/convencional/todas"
-    )
+    assert api_service.aemet_client.api_key == "fake_api_key"
+    assert api_service.aemet_client.base_url == "https://opendata.aemet.es/opendata"
 
 
 # =====================================================
@@ -167,16 +108,16 @@ def test_weather_api_service_no_api_key(monkeypatch):
 
 
 # =====================================================
-# TEST 3: obtener datos crudos correctamente
+# TEST 3: obtener observaciones correctamente
 # =====================================================
 
-def test_obtener_datos_crudos_success(api_service):
+def test_obtener_observaciones_actuales_success(api_service):
     """
-    Comprueba que _obtener_datos_crudos() devuelve una lista
+    Comprueba que el cliente AEMET inyectado devuelve una lista
     de observaciones cuando las respuestas simuladas son correctas.
     """
 
-    result = api_service._obtener_datos_crudos()
+    result = api_service.aemet_client.obtener_observaciones_actuales()
 
     # Debe devolver una lista.
     assert isinstance(result, list)
@@ -189,75 +130,35 @@ def test_obtener_datos_crudos_success(api_service):
 
 
 # =====================================================
-# TEST 4: primera respuesta sin clave "datos"
+# TEST 4: sin observaciones
 # =====================================================
 
-def test_obtener_datos_crudos_sin_url_datos(monkeypatch):
+def test_obtener_observaciones_actuales_sin_datos():
     """
-    Comprueba que si la primera respuesta de AEMET no trae
-    la clave 'datos', la función devuelve lista vacía.
-
-    Esto simula una respuesta incompleta o inesperada de la API.
+    Comprueba que si el cliente no devuelve observaciones,
+    el servicio recibe una lista vacía.
     """
 
-    class FakeSessionNoDatos:
-        """
-        Sesión falsa que devuelve un JSON sin la clave 'datos'.
-        """
-
-        def get(self, url, headers=None, timeout=20):
-            return FakeResponse({})
-
-    # Simulamos API key.
-    monkeypatch.setenv("AEMET_API_KEY", "fake_api_key")
-
-    # Sustituimos la sesión real por la falsa.
-    monkeypatch.setattr(
-        "services.weather_api_service.get_retry_session",
-        lambda: FakeSessionNoDatos()
-    )
-
-    service = WeatherAPIService()
-
-    result = service._obtener_datos_crudos()
+    service = WeatherAPIService(aemet_client=FakeAemetClient(observaciones=[]))
+    result = service.aemet_client.obtener_observaciones_actuales()
 
     assert result == []
 
 
 # =====================================================
-# TEST 5: error en la petición
+# TEST 5: servicio sin observaciones
 # =====================================================
 
-def test_obtener_datos_crudos_error(monkeypatch):
+def test_obtener_clima_por_coordenadas_devuelve_none_sin_observaciones():
     """
-    Comprueba que si ocurre un error durante la petición,
-    la función no rompe la aplicación.
-
-    En vez de lanzar error, debe devolver lista vacía.
+    Comprueba que si AEMET no trae observaciones,
+    el servicio no puede calcular clima cercano.
     """
 
-    class FakeSessionError:
-        """
-        Sesión falsa que lanza una excepción al hacer get().
-        """
+    service = WeatherAPIService(aemet_client=FakeAemetClient(observaciones=[]))
+    result = service.obtener_clima_por_coordenadas(40.4168, -3.7038)
 
-        def get(self, *args, **kwargs):
-            raise Exception("Error simulado")
-
-    # Simulamos API key.
-    monkeypatch.setenv("AEMET_API_KEY", "fake_api_key")
-
-    # Sustituimos la sesión real por una que falla.
-    monkeypatch.setattr(
-        "services.weather_api_service.get_retry_session",
-        lambda: FakeSessionError()
-    )
-
-    service = WeatherAPIService()
-
-    result = service._obtener_datos_crudos()
-
-    assert result == []
+    assert result is None
 
 
 # =====================================================
@@ -288,12 +189,7 @@ def test_obtener_clima_por_coordenadas_sin_observaciones(monkeypatch, api_servic
     la función devuelve None.
     """
 
-    # Sustituimos _obtener_datos_crudos para que devuelva lista vacía.
-    monkeypatch.setattr(
-        api_service,
-        "_obtener_datos_crudos",
-        lambda: []
-    )
+    api_service.aemet_client.observaciones = []
 
     result = api_service.obtener_clima_por_coordenadas(40.4168, -3.7038)
 
@@ -324,12 +220,7 @@ def test_obtener_clima_por_coordenadas_ignora_datos_corruptos(monkeypatch, api_s
         }
     ]
 
-    # Forzamos que _obtener_datos_crudos devuelva nuestras observaciones falsas.
-    monkeypatch.setattr(
-        api_service,
-        "_obtener_datos_crudos",
-        lambda: observaciones
-    )
+    api_service.aemet_client.observaciones = observaciones
 
     result = api_service.obtener_clima_por_coordenadas(40.4168, -3.7038)
 
@@ -341,11 +232,13 @@ def test_obtener_clima_por_coordenadas_ignora_datos_corruptos(monkeypatch, api_s
 # TEST 9: método obtener_clima_por_id
 # =====================================================
 
-def test_obtener_clima_por_id_devuelve_none(api_service):
+def test_obtener_clima_por_id_devuelve_ultima_observacion(api_service):
     """
-    Actualmente obtener_clima_por_id() está vacío con pass.
-
-    En Python, una función con pass devuelve None.
+    Comprueba que obtener_clima_por_id() devuelve la última observación
+    disponible para una estación concreta.
     """
 
-    assert api_service.obtener_clima_por_id("1234") is None
+    result = api_service.obtener_clima_por_id("1234")
+
+    assert result is not None
+    assert result["ubi"] == "Barcelona"

@@ -61,7 +61,6 @@ class AemetClient:
         url = f"{self.base_url}{endpoint}"
 
         try:
-            # Primera petición: metadatos.
             response_metadata = self.session.get(
                 url,
                 headers=self._headers(),
@@ -69,37 +68,9 @@ class AemetClient:
             )
             response_metadata.raise_for_status()
 
-            metadata = response_metadata.json()
-            data_url = metadata.get("datos")
-
-            if not data_url:
-                self.logger.warning(
-                    "AEMET no devolvió URL de datos. endpoint=%s respuesta=%s",
-                    endpoint,
-                    metadata,
-                )
-                return None
-
-            # Segunda petición: datos reales.
-            response_payload = self.session.get(
-                data_url,
-                timeout=20,
-            )
-            response_payload.raise_for_status()
-
-            return response_payload.json()
-
         except requests.exceptions.Timeout as error:
             self.logger.error(
-                "Timeout llamando a AEMET. endpoint=%s error=%s",
-                endpoint,
-                error,
-            )
-            return None
-
-        except requests.exceptions.ConnectionError as error:
-            self.logger.error(
-                "Error de conexión con AEMET. endpoint=%s error=%s",
+                "Timeout obteniendo metadatos de AEMET. endpoint=%s error=%s",
                 endpoint,
                 error,
             )
@@ -107,17 +78,118 @@ class AemetClient:
 
         except requests.exceptions.HTTPError as error:
             self.logger.error(
-                "Error HTTP de AEMET. endpoint=%s status_code=%s error=%s",
+                "Error HTTP obteniendo metadatos de AEMET. "
+                "endpoint=%s status_code=%s error=%s",
                 endpoint,
                 getattr(error.response, "status_code", None),
                 error,
             )
             return None
 
+        except requests.exceptions.ConnectionError as error:
+            self.logger.error(
+                "Error de conexión obteniendo metadatos de AEMET. "
+                "endpoint=%s error=%s",
+                endpoint,
+                error,
+            )
+            return None
+
+        except requests.exceptions.RequestException as error:
+            self.logger.error(
+                "Error de red obteniendo metadatos de AEMET. endpoint=%s error=%s",
+                endpoint,
+                error,
+            )
+            return None
+
+        try:
+            metadata = response_metadata.json()
+
         except ValueError as error:
             self.logger.error(
-                "Respuesta JSON inválida de AEMET. endpoint=%s error=%s",
+                "JSON de metadatos inválido de AEMET. endpoint=%s error=%s",
                 endpoint,
+                error,
+            )
+            return None
+
+        if not isinstance(metadata, dict):
+            self.logger.error(
+                "Metadatos de AEMET con formato inesperado. "
+                "endpoint=%s tipo=%s respuesta=%s",
+                endpoint,
+                type(metadata).__name__,
+                metadata,
+            )
+            return None
+
+        data_url = metadata.get("datos")
+
+        if not data_url:
+            self.logger.warning(
+                "AEMET no devolvió URL de datos. endpoint=%s respuesta=%s",
+                endpoint,
+                metadata,
+            )
+            return None
+
+        try:
+            response_payload = self.session.get(
+                data_url,
+                timeout=20,
+            )
+            response_payload.raise_for_status()
+
+        except requests.exceptions.Timeout as error:
+            self.logger.error(
+                "Timeout obteniendo datos de AEMET. endpoint=%s data_url=%s error=%s",
+                endpoint,
+                data_url,
+                error,
+            )
+            return None
+
+        except requests.exceptions.HTTPError as error:
+            self.logger.error(
+                "Error HTTP obteniendo datos de AEMET. "
+                "endpoint=%s data_url=%s status_code=%s error=%s",
+                endpoint,
+                data_url,
+                getattr(error.response, "status_code", None),
+                error,
+            )
+            return None
+
+        except requests.exceptions.ConnectionError as error:
+            self.logger.error(
+                "Error de conexión obteniendo datos de AEMET. "
+                "endpoint=%s data_url=%s error=%s",
+                endpoint,
+                data_url,
+                error,
+            )
+            return None
+
+        except requests.exceptions.RequestException as error:
+            self.logger.error(
+                "Error de red obteniendo datos de AEMET. "
+                "endpoint=%s data_url=%s error=%s",
+                endpoint,
+                data_url,
+                error,
+            )
+            return None
+
+        try:
+            return response_payload.json()
+
+        except ValueError as error:
+            self.logger.error(
+                "JSON de datos inválido de AEMET. "
+                "endpoint=%s data_url=%s error=%s",
+                endpoint,
+                data_url,
                 error,
             )
             return None
