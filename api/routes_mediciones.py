@@ -1,9 +1,5 @@
 """
-Rutas API para gestionar zonas.
-
-Una zona representa un municipio o localización asociada a una estación meteorológica.
-
-Este archivo conecta los endpoints de FastAPI con las funciones del archivo db/crud.py.
+Rutas API para gestionar mediciones climáticas.
 """
 
 from typing import Optional
@@ -16,261 +12,160 @@ from db.database import get_db
 from db import crud
 
 
-# Router específico para zonas.
-# Todas las rutas de este archivo empezarán por /zonas.
+# =========================================================
+# ROUTER
+# =========================================================
+
 router = APIRouter(
-    prefix="/zonas",
-    tags=["Zonas"]
+    prefix="/mediciones",
+    tags=["Mediciones"]
 )
 
 
 # =========================================================
 # SCHEMAS PYDANTIC
 # =========================================================
-# Los schemas sirven para validar los datos que entran y
-# controlar los datos que salen en la respuesta de la API.
+
+class MedicionBase(BaseModel):
+
+    fecha_datos: str
+    temperatura: Optional[float] = None
+    humedad: Optional[float] = None
+    viento: Optional[float] = None
+    lluvia: Optional[float] = None
 
 
-class ZonaBase(BaseModel):
-    """
-    Campos comunes de una zona.
+class MedicionCreate(MedicionBase):
 
-    Estos nombres coinciden con los campos del modelo Zona en db/models.py:
-        municipio
-        cod_ine
-        id_estacion
-        estacion_referencia
-    """
-
-    municipio: str
-    cod_ine: str
-    id_estacion: str
-    estacion_referencia: str
+    zona_id: int
 
 
-class ZonaCreate(ZonaBase):
-    """
-    Schema para crear una zona.
+class MedicionUpdate(BaseModel):
 
-    Hereda todos los campos de ZonaBase.
-    Al crear una zona, todos estos campos son obligatorios.
-    """
-
-    pass
+    fecha_datos: Optional[str] = None
+    temperatura: Optional[float] = None
+    humedad: Optional[float] = None
+    viento: Optional[float] = None
+    lluvia: Optional[float] = None
 
 
-class ZonaUpdate(BaseModel):
-    """
-    Schema para actualizar una zona.
-
-    Todos los campos son opcionales porque en una actualización
-    podemos cambiar solo municipio, solo cod_ine, solo estación, etc.
-    """
-
-    municipio: Optional[str] = None
-    cod_ine: Optional[str] = None
-    id_estacion: Optional[str] = None
-    estacion_referencia: Optional[str] = None
-
-
-class ZonaResponse(ZonaBase):
-    """
-    Schema de respuesta.
-
-    Incluye el id, porque ese id lo genera la base de datos.
-    """
+class MedicionResponse(MedicionBase):
 
     id: int
+    zona_id: int
 
-    # Permite que Pydantic convierta objetos SQLAlchemy en JSON.
     model_config = ConfigDict(from_attributes=True)
 
 
 # =========================================================
-# ENDPOINTS DE ZONAS
+# ENDPOINTS
 # =========================================================
 
-
-@router.get("/", response_model=list[ZonaResponse])
-def listar_zonas(
+@router.get("/", response_model=list[MedicionResponse])
+def listar_mediciones(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db)
 ):
-    """
-    Lista zonas existentes.
 
-    URL:
-        GET /zonas/
-
-    Parámetros opcionales:
-        skip  → cuántos registros saltar
-        limit → cuántos registros devolver como máximo
-    """
-
-    return crud.obtener_zonas(db=db, skip=skip, limit=limit)
+    return crud.obtener_mediciones(
+        db=db,
+        skip=skip,
+        limit=limit
+    )
 
 
-@router.get("/cod-ine/{cod_ine}", response_model=ZonaResponse)
-def obtener_zona_por_cod_ine(
-    cod_ine: str,
+@router.get("/{medicion_id}", response_model=MedicionResponse)
+def obtener_medicion(
+    medicion_id: int,
     db: Session = Depends(get_db)
 ):
-    """
-    Busca una zona por su código INE.
 
-    URL:
-        GET /zonas/cod-ine/28079
+    medicion = crud.obtener_medicion_por_id(
+        db=db,
+        medicion_id=medicion_id
+    )
 
-    Es útil porque cod_ine es único en el modelo Zona.
-    """
-
-    zona = crud.obtener_zona_por_cod_ine(db=db, cod_ine=cod_ine)
-
-    if zona is None:
+    if medicion is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No existe ninguna zona con cod_ine {cod_ine}"
+            detail=f"No existe la medición con id {medicion_id}"
         )
 
-    return zona
-
-
-@router.get("/{zona_id}", response_model=ZonaResponse)
-def obtener_zona_por_id(
-    zona_id: int,
-    db: Session = Depends(get_db)
-):
-    """
-    Busca una zona por su id.
-
-    URL:
-        GET /zonas/1
-    """
-
-    zona = crud.obtener_zona_por_id(db=db, zona_id=zona_id)
-
-    if zona is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No existe ninguna zona con id {zona_id}"
-        )
-
-    return zona
+    return medicion
 
 
 @router.post(
     "/",
-    response_model=ZonaResponse,
+    response_model=MedicionResponse,
     status_code=status.HTTP_201_CREATED
 )
-def crear_zona(
-    zona: ZonaCreate,
+def crear_medicion(
+    medicion: MedicionCreate,
     db: Session = Depends(get_db)
 ):
-    """
-    Crea una nueva zona.
 
-    URL:
-        POST /zonas/
+    medicion_data = medicion.model_dump()
 
-    Antes de crearla, comprobamos si ya existe una zona con el mismo cod_ine.
-    Esto evita chocar contra la restricción unique=True del modelo.
-    """
+    zona_id = medicion_data.pop("zona_id")
 
-    zona_existente = crud.obtener_zona_por_cod_ine(
+    nueva_medicion = crud.crear_medicion(
         db=db,
-        cod_ine=zona.cod_ine
+        medicion_data=medicion_data,
+        zona_id=zona_id
     )
 
-    if zona_existente:
+    if nueva_medicion is None:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Ya existe una zona con cod_ine {zona.cod_ine}"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No se pudo crear la medición"
         )
 
-    # Convertimos el schema Pydantic a diccionario porque crud.crear_zona()
-    # espera recibir zona_data como dict.
-    zona_data = zona.model_dump()
-
-    return crud.crear_zona(db=db, zona_data=zona_data)
+    return nueva_medicion
 
 
-@router.patch("/{zona_id}", response_model=ZonaResponse)
-def actualizar_zona(
-    zona_id: int,
-    zona: ZonaUpdate,
+@router.patch("/{medicion_id}", response_model=MedicionResponse)
+def actualizar_medicion(
+    medicion_id: int,
+    medicion: MedicionUpdate,
     db: Session = Depends(get_db)
 ):
-    """
-    Actualiza parcialmente una zona.
 
-    URL:
-        PATCH /zonas/1
+    medicion_data = medicion.model_dump(exclude_unset=True)
 
-    Solo se modifican los campos que mandes en el body.
-    """
-
-    zona_actual = crud.obtener_zona_por_id(db=db, zona_id=zona_id)
-
-    if zona_actual is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No existe ninguna zona con id {zona_id}"
-        )
-
-    # exclude_unset=True hace que solo pasen los campos enviados.
-    zona_data = zona.model_dump(exclude_unset=True)
-
-    # Si se quiere cambiar el cod_ine, comprobamos que no esté usado por otra zona.
-    if "cod_ine" in zona_data:
-        zona_con_mismo_cod_ine = crud.obtener_zona_por_cod_ine(
-            db=db,
-            cod_ine=zona_data["cod_ine"]
-        )
-
-        if (
-            zona_con_mismo_cod_ine
-            and zona_con_mismo_cod_ine.id != zona_id
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Ya existe otra zona con cod_ine {zona_data['cod_ine']}"
-            )
-
-    zona_actualizada = crud.actualizar_zona(
+    medicion_actualizada = crud.actualizar_medicion(
         db=db,
-        zona_id=zona_id,
-        zona_data=zona_data
+        medicion_id=medicion_id,
+        medicion_data=medicion_data
     )
 
-    return zona_actualizada
-
-
-@router.delete("/{zona_id}")
-def eliminar_zona(
-    zona_id: int,
-    db: Session = Depends(get_db)
-):
-    """
-    Elimina una zona por id.
-
-    URL:
-        DELETE /zonas/1
-
-    En models.py tienes cascade='all, delete-orphan',
-    así que si se elimina una zona, se eliminan también sus mediciones asociadas.
-    """
-
-    zona_eliminada = crud.eliminar_zona(db=db, zona_id=zona_id)
-
-    if zona_eliminada is None:
+    if medicion_actualizada is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No existe ninguna zona con id {zona_id}"
+            detail=f"No existe la medición con id {medicion_id}"
+        )
+
+    return medicion_actualizada
+
+
+@router.delete("/{medicion_id}")
+def eliminar_medicion(
+    medicion_id: int,
+    db: Session = Depends(get_db)
+):
+
+    medicion_eliminada = crud.eliminar_medicion(
+        db=db,
+        medicion_id=medicion_id
+    )
+
+    if medicion_eliminada is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No existe la medición con id {medicion_id}"
         )
 
     return {
-        "message": "Zona eliminada correctamente",
-        "zona_id": zona_id
+        "message": "Medición eliminada correctamente",
+        "medicion_id": medicion_id
     }

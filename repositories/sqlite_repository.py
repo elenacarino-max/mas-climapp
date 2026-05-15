@@ -12,4 +12,4 @@ class SQLiteRepository:
 
     def save_measurement(self, measurement_data: dict, zona_id: int):
         # Delegamos la creación al CRUD que ya tiene las validaciones
-        return crud.crear_medicion(self.db, measurement_data, zona_id)
+        return crud.medicion_crear(self.db, measurement_data, zona_id)
