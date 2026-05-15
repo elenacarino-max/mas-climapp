@@ -8,17 +8,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from db import crud
-<<<<<<< Updated upstream
-=======
 from db.database import get_db
->>>>>>> Stashed changes
 from schemas.measurement_schema import (
     MedicionActualizar,
     MedicionCrear,
     MedicionRespuesta,
 )
 
-# El patrón de este archivo es muy similar al de routes_zonas.py, pero adaptado a las mediciones.
+
 router = APIRouter(
     prefix="/mediciones",
     tags=["Mediciones"],
@@ -60,11 +57,7 @@ def obtener_medicion(
 @router.post(
     "/",
     response_model=MedicionRespuesta,
-<<<<<<< Updated upstream
-    status_code=status.HTTP_201_CREATED
-=======
     status_code=status.HTTP_201_CREATED,
->>>>>>> Stashed changes
 )
 def crear_medicion(
     medicion: MedicionCrear,
@@ -129,9 +122,5 @@ def eliminar_medicion(
 
     return {
         "message": "Medición eliminada correctamente",
-<<<<<<< Updated upstream
-        "medicion_id": medicion_id
-=======
         "medicion_id": medicion_id,
->>>>>>> Stashed changes
     }
