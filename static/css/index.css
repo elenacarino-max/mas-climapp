@@ -468,48 +468,6 @@ h3 {
   font-size: 22px;
 }
 
-.alerts-panel {
-  grid-column: 1 / 2;
-  padding: 22px;
-  display: grid;
-  gap: 14px;
-}
-
-.alerts-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.weather-alert {
-  min-height: 36px;
-  display: inline-flex;
-  align-items: center;
-  border-radius: 8px;
-  padding: 8px 12px;
-  border: 1px solid transparent;
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.alert-green {
-  color: #166534;
-  background: #dcfce7;
-  border-color: rgba(22, 101, 52, 0.16);
-}
-
-.alert-orange {
-  color: #9a3412;
-  background: #ffedd5;
-  border-color: rgba(154, 52, 18, 0.18);
-}
-
-.alert-red {
-  color: #991b1b;
-  background: #fee2e2;
-  border-color: rgba(153, 27, 27, 0.18);
-}
-
 .navigation-panel {
   grid-column: 2 / 3;
 }
@@ -545,7 +503,6 @@ h3 {
 
   .api-panel,
   .navigation-panel,
-  .alerts-panel,
   .metrics-grid {
     grid-column: 1 / 2;
   }
