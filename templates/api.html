@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mas ClimApp | API</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #d8dee9;
+      --accent: #2563eb;
+      --accent-dark: #1d4ed8;
+      --ok: #15803d;
+      --error: #b91c1c;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    main {
+      width: min(1100px, calc(100% - 32px));
+      margin: 32px auto;
+    }
+
+    header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    h1, h2 { margin: 0; line-height: 1.15; }
+    h1 { font-size: 32px; }
+    h2 { font-size: 20px; margin-bottom: 14px; }
+    p { color: var(--muted); line-height: 1.5; }
+
+    a {
+      color: var(--accent);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+      gap: 18px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    button,
+    .link-button {
+      border: 0;
+      border-radius: 6px;
+      background: var(--accent);
+      color: white;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 0 14px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    button:hover,
+    .link-button:hover {
+      background: var(--accent-dark);
+      color: white;
+    }
+
+    .secondary {
+      background: #e5e7eb;
+      color: var(--text);
+    }
+
+    .secondary:hover {
+      background: #d1d5db;
+      color: var(--text);
+    }
+
+    label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    input {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 15px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .endpoint-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .endpoint {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 12px;
+    }
+
+    code, pre { font-family: Consolas, monospace; }
+    code { color: #111827; overflow-wrap: anywhere; }
+
+    pre {
+      min-height: 220px;
+      max-height: 520px;
+      overflow: auto;
+      margin: 0;
+      border-radius: 6px;
+      background: #111827;
+      color: #e5e7eb;
+      padding: 14px;
+      white-space: pre-wrap;
+    }
+
+    .status {
+      margin-top: 12px;
+      font-weight: 700;
+    }
+
+    .status.ok { color: var(--ok); }
+    .status.error { color: var(--error); }
+
+    @media (max-width: 850px) {
+      header { display: block; }
+      .grid, .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>API de Mas ClimApp</h1>
+        <p>Prueba la conexion GPS con AEMET y revisa los endpoints disponibles.</p>
+      </div>
+      <a class="link-button secondary" href="/">Volver al inicio</a>
+    </header>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Probar clima por GPS</h2>
+        <p>Usa tu ubicacion real o introduce coordenadas manuales. La llamada usa el endpoint Flask <code>/api/clima</code>.</p>
+
+        <div class="actions">
+          <button id="gpsButton" type="button">Usar mi GPS</button>
+          <button id="docsButton" class="secondary" type="button">Abrir Swagger</button>
+        </div>
+
+        <div class="form-grid">
+          <div>
+            <label for="latInput">Latitud</label>
+            <input id="latInput" type="text" value="40.4168" inputmode="decimal">
+          </div>
+          <div>
+            <label for="lonInput">Longitud</label>
+            <input id="lonInput" type="text" value="-3.7038" inputmode="decimal">
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="manualButton" type="button">Consultar AEMET</button>
+        </div>
+
+        <p id="status" class="status"></p>
+      </div>
+
+      <aside class="panel">
+        <h2>Endpoints utiles</h2>
+        <div class="endpoint-list">
+          <div class="endpoint">
+            <strong>Flask</strong>
+            <p><code>GET /api/clima?lat=40.4168&amp;lon=-3.7038</code></p>
+          </div>
+          <div class="endpoint">
+            <strong>FastAPI Swagger</strong>
+            <p><code>http://127.0.0.1:8000/docs</code></p>
+          </div>
+          <div class="endpoint">
+            <strong>FastAPI CRUD</strong>
+            <p><code>/health/</code>, <code>/zonas/</code>, <code>/mediciones/</code></p>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="panel" style="margin-top: 18px;">
+      <h2>Respuesta</h2>
+      <pre id="output">Pulsa "Usar mi GPS" o "Consultar AEMET".</pre>
+    </section>
+  </main>
+
+  <script>
+    const latInput = document.getElementById("latInput");
+    const lonInput = document.getElementById("lonInput");
+    const output = document.getElementById("output");
+    const statusBox = document.getElementById("status");
+
+    function setStatus(message, type) {
+      statusBox.textContent = message;
+      statusBox.className = `status ${type || ""}`;
+    }
+
+    async function consultarClima(lat, lon) {
+      setStatus("Consultando AEMET...", "");
+      output.textContent = "Cargando...";
+
+      try {
+        const response = await fetch(`/api/clima?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`);
+        const data = await response.json();
+
+        output.textContent = JSON.stringify(data, null, 2);
+
+        if (!response.ok) {
+          setStatus(`Error ${response.status}`, "error");
+          return;
+        }
+
+        setStatus(`OK: ${data.ciudad || data.estacion || "datos recibidos"}`, "ok");
+      } catch (error) {
+        output.textContent = String(error);
+        setStatus("Error de conexion", "error");
+      }
+    }
+
+    document.getElementById("manualButton").addEventListener("click", () => {
+      consultarClima(latInput.value.trim(), lonInput.value.trim());
+    });
+
+    document.getElementById("docsButton").addEventListener("click", () => {
+      window.location.href = "http://127.0.0.1:8000/docs";
+    });
+
+    document.getElementById("gpsButton").addEventListener("click", () => {
+      if (!navigator.geolocation) {
+        setStatus("GPS no soportado por este navegador", "error");
+        return;
+      }
+
+      setStatus("Esperando permiso de ubicacion...", "");
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+
+          latInput.value = lat;
+          lonInput.value = lon;
+          consultarClima(lat, lon);
+        },
+        () => {
+          setStatus("Permiso de ubicacion denegado", "error");
+        }
+      );
+    });
+  </script>
+</body>
+</html>

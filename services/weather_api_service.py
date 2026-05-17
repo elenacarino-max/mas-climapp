@@ -256,22 +256,6 @@ class WeatherAPIService:
 
         return estacion_cercana
 
-    def obtener_clima_por_id(self, station_id: str) -> Optional[Dict[str, Any]]:
-        """
-        Obtiene datos meteorológicos de una estación concreta.
-
-        Este método lo dejamos preparado por si más adelante queremos
-        consultar una estación AEMET concreta por su ID.
-        """
-
-        observaciones = self.aemet_client.obtener_observacion_por_estacion(station_id)
-
-        if not observaciones:
-            return None
-
-        ultima_observacion = observaciones[-1]
-        return ultima_observacion
-
     @staticmethod
     def _convertir_a_float(valor: Any) -> float:
         """

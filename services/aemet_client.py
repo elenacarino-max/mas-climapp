@@ -245,18 +245,6 @@ class AemetClient:
         payload = self._get_payload_from_endpoint(endpoint)
         return self._payload_como_lista(payload, endpoint)
 
-    def obtener_observacion_por_estacion(
-        self,
-        idema: str,
-    ) -> List[Dict[str, Any]]:
-        """
-        Obtiene observaciones actuales de una estación concreta.
-        """
-
-        endpoint = f"/api/observacion/convencional/datos/estacion/{idema}"
-        payload = self._get_payload_from_endpoint(endpoint)
-        return self._payload_como_lista(payload, endpoint)
-
     def obtener_prediccion_municipio_diaria(
         self,
         codigo_municipio: str,

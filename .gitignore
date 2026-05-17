@@ -4,6 +4,7 @@
 # Entornos virtuales
 .venv/
 venv/
+venv_old/
 env/
 
 # Python

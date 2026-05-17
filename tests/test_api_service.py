@@ -36,9 +36,6 @@ class FakeAemetClient:
     def obtener_observaciones_actuales(self):
         return self.observaciones
 
-    def obtener_observacion_por_estacion(self, station_id):
-        return self.observaciones
-
     def obtener_prediccion_municipio_diaria(self, codigo_municipio):
         return None
 
@@ -228,17 +225,3 @@ def test_obtener_clima_por_coordenadas_ignora_datos_corruptos(monkeypatch, api_s
     assert result["ubi"] == "Madrid-Retiro"
 
 
-# =====================================================
-# TEST 9: método obtener_clima_por_id
-# =====================================================
-
-def test_obtener_clima_por_id_devuelve_ultima_observacion(api_service):
-    """
-    Comprueba que obtener_clima_por_id() devuelve la última observación
-    disponible para una estación concreta.
-    """
-
-    result = api_service.obtener_clima_por_id("1234")
-
-    assert result is not None
-    assert result["ubi"] == "Barcelona"
