@@ -34,6 +34,17 @@
           <h2 id="cityName">Detectando...</h2>
           <p class="muted" id="stationName">Buscando estación cercana...</p>
 
+          <form class="location-search" id="locationSearchForm">
+            <input
+              id="locationInput"
+              name="nombre"
+              type="search"
+              placeholder="Buscar localidad"
+              autocomplete="off"
+            >
+            <button class="outline-btn" id="locationSearchBtn" type="submit">Buscar</button>
+          </form>
+
           <div class="temp-row">
             <span class="temp" id="temperature">--°</span>
             <div>

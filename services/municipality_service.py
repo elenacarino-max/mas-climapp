@@ -2,6 +2,7 @@
 
 import logging
 import re
+import unicodedata
 from typing import Any, Dict, List, Optional, Tuple
 
 from services.aemet_client import AemetClient
@@ -98,6 +99,51 @@ class MunicipalityService:
             return None
 
         return self.obtener_municipio_mas_cercano(lat, lon)
+
+    def obtener_municipio_por_nombre(
+        self,
+        nombre: Any,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Busca un municipio de AEMET por nombre y devuelve sus coordenadas.
+        """
+
+        nombre_buscado = self._normalizar_texto(nombre)
+
+        if not nombre_buscado:
+            return None
+
+        municipios = self._obtener_municipios()
+
+        if not municipios:
+            self.logger.warning("No hay municipios disponibles para buscar por nombre.")
+            return None
+
+        coincidencia_parcial = None
+
+        for municipio in municipios:
+            nombre_municipio = self._extraer_nombre_municipio(municipio)
+            nombre_normalizado = self._normalizar_texto(nombre_municipio)
+
+            if not nombre_normalizado:
+                continue
+
+            if nombre_normalizado == nombre_buscado:
+                return self._normalizar_municipio(
+                    municipio=municipio,
+                    distancia_km=0,
+                )
+
+            if coincidencia_parcial is None and nombre_buscado in nombre_normalizado:
+                coincidencia_parcial = municipio
+
+        if coincidencia_parcial is None:
+            return None
+
+        return self._normalizar_municipio(
+            municipio=coincidencia_parcial,
+            distancia_km=0,
+        )
 
     def _obtener_municipios(self) -> List[Dict[str, Any]]:
         """
@@ -292,3 +338,12 @@ class MunicipalityService:
 
         except (TypeError, ValueError):
             raise ValueError(f"No se puede convertir a float: {valor}")
+
+    @staticmethod
+    def _normalizar_texto(valor: Any) -> str:
+        texto = str(valor or "").strip().lower()
+        texto = unicodedata.normalize("NFKD", texto)
+        texto = "".join(
+            caracter for caracter in texto if not unicodedata.combining(caracter)
+        )
+        return re.sub(r"\s+", " ", texto)

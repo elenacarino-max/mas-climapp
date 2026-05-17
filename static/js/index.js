@@ -139,6 +139,33 @@ async function actualizarClima() {
     });
 }
 
+async function buscarClimaPorLocalidad(event) {
+    event.preventDefault();
+
+    const input = document.getElementById("locationInput");
+    const updatedAt = document.getElementById("updatedAt");
+    const statusDot = document.getElementById("statusDot");
+    const nombre = input?.value.trim();
+
+    if (!nombre) {
+        updatedAt.textContent = "Escribe una localidad";
+        return;
+    }
+
+    updatedAt.textContent = `Buscando ${nombre}...`;
+    statusDot.style.background = "#64748b";
+    statusDot.style.boxShadow = "0 0 0 5px rgba(100, 116, 139, 0.12)";
+
+    try {
+        await consultarClima(`/api/clima/localidad?nombre=${encodeURIComponent(nombre)}`);
+    } catch (error) {
+        console.error(error);
+        updatedAt.textContent = "No se pudo consultar esa localidad";
+        statusDot.style.background = "#dc2626";
+        statusDot.style.boxShadow = "0 0 0 5px rgba(220, 38, 38, 0.12)";
+    }
+}
+
 function pintarEstado(servicio, estado, texto) {
     const dot = document.getElementById(`${servicio}StatusDot`);
     const label = document.getElementById(`${servicio}StatusText`);
@@ -200,4 +227,8 @@ document.addEventListener("DOMContentLoaded", () => {
         statusRefreshBtn.addEventListener("click", actualizarEstadoServicios);
     }
 
+    const locationSearchForm = document.getElementById("locationSearchForm");
+    if (locationSearchForm) {
+        locationSearchForm.addEventListener("submit", buscarClimaPorLocalidad);
+    }
 });

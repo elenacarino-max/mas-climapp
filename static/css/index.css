@@ -183,6 +183,32 @@ h3 {
   font-size: 15px;
 }
 
+.location-search {
+  width: min(100%, 430px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.location-search input {
+  min-height: 42px;
+  width: 100%;
+  border: 1px solid rgba(2, 132, 199, 0.18);
+  border-radius: 8px;
+  padding: 0 13px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.84);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.location-search input:focus {
+  border-color: var(--sky);
+  box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.12);
+}
+
 .temp-row {
   display: flex;
   align-items: center;
@@ -514,6 +540,10 @@ h3 {
 
   .header-actions {
     display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .location-search {
     grid-template-columns: 1fr;
   }
 
