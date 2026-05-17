@@ -2,6 +2,7 @@ import pytest
 
 from controllers.compare_controller import (
     calculate_difference,
+    get_discrepancy_details,
     has_discrepancy,
     compare_latest_records,
 )
@@ -160,6 +161,22 @@ def test_has_discrepancy_true_rain():
     assert has_discrepancy(differences) is True
 
 
+def test_get_discrepancy_details_marks_each_field():
+    differences = {
+        "temperatura": 4,
+        "humedad": 8,
+        "viento": 12,
+        "lluvia": 0,
+    }
+
+    assert get_discrepancy_details(differences) == {
+        "temperatura": True,
+        "humedad": False,
+        "viento": True,
+        "lluvia": False,
+    }
+
+
 # =====================================================
 # TESTS compare_latest_records()
 # =====================================================
@@ -222,6 +239,7 @@ def test_compare_latest_records_success(monkeypatch, manual_record, api_record):
     assert resultado["manual"] == manual_record
     assert resultado["api"]["fuente"] == "AEMET (Oficial)"
     assert "diferencias" in resultado
+    assert "discrepancias" in resultado
     assert "hay_discrepancia" in resultado
 
 
