@@ -74,45 +74,53 @@ function obtenerDetalleAlerta(alerta) {
 
     if (normalizado.includes("ROJA") || normalizado.includes("ROJO")) {
         return {
-            clase: "alert-red",
+            estado: "red",
             mensaje: texto.charAt(0).toUpperCase() + texto.slice(1),
         };
     }
 
     if (normalizado.includes("NARANJA")) {
         return {
-            clase: "alert-orange",
+            estado: "orange",
             mensaje: texto.charAt(0).toUpperCase() + texto.slice(1),
         };
     }
 
     return {
-        clase: "alert-green",
+        estado: "green",
         mensaje: normalizado.includes("VERDE")
             ? "Sin riesgo climático"
             : texto.charAt(0).toUpperCase() + texto.slice(1),
     };
 }
 
-function pintarAlertas(alertas) {
-    const alertsList = document.getElementById("alertsList");
-
-    if (!alertsList) return;
-
-    alertsList.innerHTML = "";
-
+function pintarRiesgoClimatico(alertas) {
+    const dot = document.getElementById("alertStatusDot");
+    const label = document.getElementById("alertStatusText");
     const alertasValidas = Array.isArray(alertas) && alertas.length > 0
         ? alertas
         : ["VERDE"];
+    const detalles = alertasValidas.map(obtenerDetalleAlerta);
+    const detallePrincipal = detalles.find((detalle) => detalle.estado === "red")
+        || detalles.find((detalle) => detalle.estado === "orange")
+        || detalles[0];
 
-    alertasValidas.forEach((alerta) => {
-        const detalle = obtenerDetalleAlerta(alerta);
-        const alertaElemento = document.createElement("span");
+    if (!dot || !label) return;
 
-        alertaElemento.className = `weather-alert ${detalle.clase}`;
-        alertaElemento.textContent = detalle.mensaje;
-        alertsList.appendChild(alertaElemento);
-    });
+    dot.classList.remove("pending", "error");
+
+    if (detallePrincipal.estado === "red") {
+        dot.style.background = "#dc2626";
+        dot.style.boxShadow = "0 0 0 5px rgba(220, 38, 38, 0.12)";
+    } else if (detallePrincipal.estado === "orange") {
+        dot.style.background = "#f97316";
+        dot.style.boxShadow = "0 0 0 5px rgba(249, 115, 22, 0.14)";
+    } else {
+        dot.style.background = "#16a34a";
+        dot.style.boxShadow = "0 0 0 5px rgba(22, 163, 74, 0.12)";
+    }
+
+    label.textContent = detallePrincipal.mensaje;
 }
 
 function pintarClima(data) {
@@ -143,7 +151,7 @@ function pintarClima(data) {
 
     updatedAt.textContent = `Ultima actualizacion: ${horaActual}`;
     actualizarIconoVisual(data);
-    pintarAlertas(data.alertas);
+    pintarRiesgoClimatico(data.alertas);
 
     statusDot.style.background = "#16a34a";
     statusDot.style.boxShadow = "0 0 0 5px rgba(22, 163, 74, 0.12)";
