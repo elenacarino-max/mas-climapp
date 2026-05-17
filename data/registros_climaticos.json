@@ -8808,5 +8808,25 @@
             "VERDE"
         ],
         "fuente": "automatico"
+    },
+    {
+        "estacion_id": "3168B",
+        "fecha": "16/05/2026",
+        "temperatura": -5.0,
+        "humedad": 90.0,
+        "viento": 25.0,
+        "lluvia": 50.0,
+        "municipio": "Valdemoro",
+        "fuente": "manual"
+    },
+    {
+        "estacion_id": "3214Y",
+        "fecha": "12/05/2026",
+        "temperatura": -5.0,
+        "humedad": 60.0,
+        "viento": 25.0,
+        "lluvia": 50.0,
+        "municipio": "Valdemorillo",
+        "fuente": "manual"
     }
 ]
