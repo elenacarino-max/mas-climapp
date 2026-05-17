@@ -65,6 +65,56 @@ function formatearNumero(valor, decimales = 0) {
     });
 }
 
+function obtenerDetalleAlerta(alerta) {
+    const valor = typeof alerta === "string"
+        ? alerta
+        : alerta?.mensaje || alerta?.nivel || "VERDE";
+    const texto = String(valor).replaceAll("_", " ").toLowerCase();
+    const normalizado = String(valor).toUpperCase();
+
+    if (normalizado.includes("ROJA") || normalizado.includes("ROJO")) {
+        return {
+            clase: "alert-red",
+            mensaje: texto.charAt(0).toUpperCase() + texto.slice(1),
+        };
+    }
+
+    if (normalizado.includes("NARANJA")) {
+        return {
+            clase: "alert-orange",
+            mensaje: texto.charAt(0).toUpperCase() + texto.slice(1),
+        };
+    }
+
+    return {
+        clase: "alert-green",
+        mensaje: normalizado.includes("VERDE")
+            ? "Sin riesgo climático"
+            : texto.charAt(0).toUpperCase() + texto.slice(1),
+    };
+}
+
+function pintarAlertas(alertas) {
+    const alertsList = document.getElementById("alertsList");
+
+    if (!alertsList) return;
+
+    alertsList.innerHTML = "";
+
+    const alertasValidas = Array.isArray(alertas) && alertas.length > 0
+        ? alertas
+        : ["VERDE"];
+
+    alertasValidas.forEach((alerta) => {
+        const detalle = obtenerDetalleAlerta(alerta);
+        const alertaElemento = document.createElement("span");
+
+        alertaElemento.className = `weather-alert ${detalle.clase}`;
+        alertaElemento.textContent = detalle.mensaje;
+        alertsList.appendChild(alertaElemento);
+    });
+}
+
 function pintarClima(data) {
     const temperature = document.getElementById("temperature");
     const humidity = document.getElementById("humidity");
@@ -93,6 +143,7 @@ function pintarClima(data) {
 
     updatedAt.textContent = `Ultima actualizacion: ${horaActual}`;
     actualizarIconoVisual(data);
+    pintarAlertas(data.alertas);
 
     statusDot.style.background = "#16a34a";
     statusDot.style.boxShadow = "0 0 0 5px rgba(22, 163, 74, 0.12)";
