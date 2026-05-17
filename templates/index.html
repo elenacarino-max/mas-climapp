@@ -3,39 +3,47 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ClimApp | Tiempo Real</title>
+  <title>Mas ClimApp | Panel climático</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
 </head>
 
 <body>
-  <main class="dashboard">
-
-    <section class="topbar">
+  <main class="app-shell">
+    <header class="app-header">
       <div>
-        <p class="eyebrow">ClimApp</p>
-        <h1 id="mainTitle">Cargando ubicación...</h1>
+        <p class="eyebrow">Mas ClimApp</p>
+        <h1 id="mainTitle">Panel climático en tiempo real</h1>
       </div>
-    </section>
 
-    <section class="grid">
+      <div class="header-actions">
+        <a class="outline-btn" href="{{ url_for('view.api_view') }}">Panel API</a>
+        <a class="outline-btn" href="http://127.0.0.1:8000/docs">Swagger</a>
+        <button id="refreshBtn" class="primary-btn" type="button">Actualizar</button>
+      </div>
+    </header>
 
-      <article class="card hero-card">
-        <div class="hero-left">
-          <p class="label">Municipio</p>
+    <section class="layout-grid">
+      <article class="panel weather-panel">
+        <div class="weather-copy">
+          <p class="label">Ubicación detectada</p>
           <h2 id="cityName">Detectando...</h2>
           <p class="muted" id="stationName">Buscando estación cercana...</p>
 
           <div class="temp-row">
             <span class="temp" id="temperature">--°</span>
-            <div class="status-dot" id="statusDot"></div>
+            <div>
+              <div class="live-status">
+                <span class="status-dot" id="statusDot"></span>
+                <span>Datos AEMET</span>
+              </div>
+              <p class="updated" id="updatedAt">Esperando permisos...</p>
+            </div>
           </div>
-
-          <p class="updated" id="updatedAt">Esperando permisos...</p>
         </div>
 
         <div class="hero-right" id="weather-icon-container">
@@ -53,57 +61,86 @@
         </div>
       </article>
 
-      <article class="card metrics-card">
-        <h3>Condiciones</h3>
+      <aside class="panel api-panel">
+        <div class="panel-title-row">
+          <div>
+            <p class="label">Estado</p>
+            <h2>Servicios</h2>
+          </div>
+          <button id="statusRefreshBtn" class="icon-btn" type="button" title="Actualizar estado">↻</button>
+        </div>
 
-        <div class="metrics-grid">
-          <div class="metric-box">
-            <p class="metric-label">Humedad</p>
-            <p class="metric-value" id="humidity">--%</p>
+        <div class="status-list">
+          <div class="service-row">
+            <span class="service-dot pending" id="flaskStatusDot"></span>
+            <div>
+              <strong>Flask App</strong>
+              <p id="flaskStatusText">Comprobando...</p>
+            </div>
           </div>
 
-          <div class="metric-box">
-            <p class="metric-label">Viento</p>
-            <p class="metric-value" id="wind">-- km/h</p>
+          <div class="service-row">
+            <span class="service-dot pending" id="fastapiStatusDot"></span>
+            <div>
+              <strong>FastAPI Swagger</strong>
+              <p id="fastapiStatusText">Comprobando...</p>
+            </div>
           </div>
 
-          <div class="metric-box">
-            <p class="metric-label">Lluvia</p>
-            <p class="metric-value" id="rain">-- mm</p>
-          </div>
-
-          <div class="metric-box">
-            <p class="metric-label">Fuente</p>
-            <p class="metric-value small" id="source">AEMET</p>
+          <div class="service-row">
+            <span class="service-dot pending" id="dbStatusDot"></span>
+            <div>
+              <strong>SQLite</strong>
+              <p id="dbStatusText">Comprobando...</p>
+            </div>
           </div>
         </div>
-      </article>
 
-      <article class="card summary-card">
-        <h3>Navegación</h3>
+        <div class="api-links">
+          <a href="{{ url_for('view.api_view') }}">Probar /api/clima</a>
+          <a href="http://127.0.0.1:8000/docs">Abrir Swagger</a>
+        </div>
+      </aside>
 
-        <div class="topbar-actions">
+      <section class="metrics-grid">
+        <article class="metric-card">
+          <p class="metric-label">Humedad</p>
+          <p class="metric-value" id="humidity">--%</p>
+        </article>
 
+        <article class="metric-card">
+          <p class="metric-label">Viento</p>
+          <p class="metric-value" id="wind">-- km/h</p>
+        </article>
+
+        <article class="metric-card">
+          <p class="metric-label">Lluvia</p>
+          <p class="metric-value" id="rain">-- mm</p>
+        </article>
+
+        <article class="metric-card">
+          <p class="metric-label">Fuente</p>
+          <p class="metric-value small" id="source">AEMET</p>
+        </article>
+      </section>
+
+      <nav class="panel navigation-panel">
+        <p class="label">Navegación</p>
+        <div class="nav-grid">
           {% if session.get("usuario") %}
-
-            <a href="{{ url_for('view.registro') }}" class="mini-btn">Registro</a>
-            <a href="{{ url_for('view.api_view') }}" class="mini-btn active">API</a>
-            <a href="{{ url_for('view.consulta') }}" class="mini-btn">Histórico</a>
-            <a href="{{ url_for('view.comparar') }}" class="mini-btn">Comparar</a>
-            <a href="{{ url_for('auth.logout') }}" class="mini-btn logout-btn">Cerrar sesión</a>
-
+            <a href="{{ url_for('view.registro') }}">Registro</a>
+            <a href="{{ url_for('view.consulta') }}">Histórico</a>
+            <a href="{{ url_for('view.comparar') }}">Comparar</a>
+            <a href="{{ url_for('auth.logout') }}">Salir</a>
           {% else %}
-
-            <a href="{{ url_for('view.registro_usuario') }}" class="mini-btn">Registro de usuario</a>
-            <a href="{{ url_for('view.login') }}" class="mini-btn active">Iniciar sesión</a>
-
+            <a href="{{ url_for('view.registro_usuario') }}">Registro usuario</a>
+            <a href="{{ url_for('view.login') }}">Login</a>
+            <a href="{{ url_for('view.consulta') }}">Histórico</a>
+            <a href="{{ url_for('view.api_view') }}">API Flask</a>
+            <a href="http://127.0.0.1:8000/docs">Swagger</a>
           {% endif %}
-
         </div>
-
-        <button id="refreshBtn" class="primary-btn">Actualizar Datos</button>
-      </article>
-
+      </nav>
     </section>
   </main>
 

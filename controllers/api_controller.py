@@ -33,6 +33,8 @@ Eso lo hacen:
 import logging
 
 from flask import Blueprint, jsonify, request
+import requests
+from sqlalchemy import text
 
 from db import crud
 from db.database import SessionLocal, create_tables
@@ -43,6 +45,61 @@ from services.weather_api_service import obtener_clima_por_coordenadas
 api_bp = Blueprint("api", __name__)
 
 logger = logging.getLogger(__name__)
+
+
+@api_bp.route("/api/status", methods=["GET"])
+def api_status():
+    """
+    Devuelve el estado de los servicios principales para el dashboard.
+    """
+
+    estado = {
+        "flask": {
+            "status": "ok",
+            "message": "Aplicacion Flask disponible",
+        },
+        "fastapi": {
+            "status": "offline",
+            "url": "http://127.0.0.1:8000/docs",
+        },
+        "database": {
+            "status": "unknown",
+        },
+        "aemet": {
+            "status": "configured",
+        },
+    }
+
+    db = SessionLocal()
+    try:
+        db.execute(text("SELECT 1"))
+        estado["database"] = {
+            "status": "ok",
+            "message": "Base de datos disponible",
+        }
+    except Exception as error:
+        estado["database"] = {
+            "status": "error",
+            "message": str(error),
+        }
+    finally:
+        db.close()
+
+    try:
+        response = requests.get("http://127.0.0.1:8000/health/", timeout=2)
+        if response.ok:
+            estado["fastapi"] = {
+                "status": "ok",
+                "url": "http://127.0.0.1:8000/docs",
+            }
+    except requests.exceptions.RequestException:
+        estado["fastapi"] = {
+            "status": "offline",
+            "url": "http://127.0.0.1:8000/docs",
+            "message": "Arranca FastAPI con: python -m uvicorn api.main:app --reload",
+        }
+
+    return jsonify(estado), 200
 
 
 def _normalizar_cod_ine(codigo_municipio):
