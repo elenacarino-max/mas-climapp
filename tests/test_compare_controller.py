@@ -178,18 +178,22 @@ def test_compare_latest_records_success(monkeypatch, manual_record, api_record):
     # Tiene que tener el método _obtener_datos_crudos()
     # porque eso es lo que usa compare_latest_records().
     class FakeWeatherAPIService:
-        def _obtener_datos_crudos(self):
-            return [
-                {
-                    "idema": manual_record["estacion_id"],
-                    "ubi": "Madrid",
-                    "fint": "2026-04-22T12:30:00",
-                    "ta": "21",
-                    "hr": "58",
-                    "vv": "12",
-                    "prec": "0",
-                }
-            ]
+        class FakeAemetClient:
+            def obtener_observaciones_actuales(self):
+                return [
+                    {
+                        "idema": manual_record["estacion_id"],
+                        "ubi": "Madrid",
+                        "fint": "2026-04-22T12:30:00",
+                        "ta": "21",
+                        "hr": "58",
+                        "vv": "12",
+                        "prec": "0",
+                    }
+                ]
+
+        def __init__(self):
+            self.aemet_client = self.FakeAemetClient()
 
     # Simulamos el normalizador para que devuelva nuestro api_record.
     def fake_normalizar_datos_aemet(raw_data):
@@ -254,8 +258,17 @@ def test_compare_latest_records_no_api(monkeypatch, manual_record):
 
     # Simulamos que AEMET no devuelve ninguna observación.
     class FakeWeatherAPIService:
-        def _obtener_datos_crudos(self):
-            return []
+        class FakeAemetClient:
+            def obtener_observaciones_actuales(self):
+                return []
+
+        class FakeMunicipalityService:
+            def obtener_municipio_por_nombre(self, municipio):
+                return None
+
+        def __init__(self):
+            self.aemet_client = self.FakeAemetClient()
+            self.municipality_service = self.FakeMunicipalityService()
 
     monkeypatch.setattr(
         "controllers.compare_controller.filter_records",
@@ -273,6 +286,69 @@ def test_compare_latest_records_no_api(monkeypatch, manual_record):
     assert "AEMET" in resultado["message"]
 
 
+def test_compare_latest_records_usa_estacion_cercana_si_falta_estacion(
+    monkeypatch,
+    manual_record,
+    api_record,
+):
+    """
+    Comprueba que la comparativa usa coordenadas de municipio como plan B
+    si AEMET no devuelve la estacion manual exacta.
+    """
+
+    def fake_filter_records(municipio, fecha):
+        return [manual_record]
+
+    class FakeWeatherAPIService:
+        class FakeAemetClient:
+            def obtener_observaciones_actuales(self):
+                return []
+
+        class FakeMunicipalityService:
+            def obtener_municipio_por_nombre(self, municipio):
+                return {
+                    "nombre": municipio,
+                    "lat": 40.4168,
+                    "lon": -3.7038,
+                }
+
+        def __init__(self):
+            self.aemet_client = self.FakeAemetClient()
+            self.municipality_service = self.FakeMunicipalityService()
+
+        def obtener_clima_por_coordenadas(self, lat, lon):
+            return {
+                "idema": "3195",
+                "ubi": "Madrid",
+                "fint": "2026-04-22T12:30:00",
+                "ta": "21",
+                "hr": "58",
+                "vv": "12",
+                "prec": "0",
+            }
+
+    def fake_normalizar_datos_aemet(raw_data):
+        return api_record.copy()
+
+    monkeypatch.setattr(
+        "controllers.compare_controller.filter_records",
+        fake_filter_records,
+    )
+    monkeypatch.setattr(
+        "controllers.compare_controller.WeatherAPIService",
+        FakeWeatherAPIService,
+    )
+    monkeypatch.setattr(
+        "controllers.compare_controller.normalizar_datos_aemet",
+        fake_normalizar_datos_aemet,
+    )
+
+    resultado = compare_latest_records("Madrid", "2026-04-22")
+
+    assert resultado["success"] is True
+    assert resultado["api"]["fuente"] == "AEMET (Oficial)"
+
+
 def test_compare_latest_records_api_exception(monkeypatch, manual_record):
     """
     Comprueba que compare_latest_records devuelve error
@@ -285,8 +361,12 @@ def test_compare_latest_records_api_exception(monkeypatch, manual_record):
 
     # Simulamos que el servicio de AEMET falla.
     class FakeWeatherAPIService:
-        def _obtener_datos_crudos(self):
-            raise Exception("Error simulado de API")
+        class FakeAemetClient:
+            def obtener_observaciones_actuales(self):
+                raise Exception("Error simulado de API")
+
+        def __init__(self):
+            self.aemet_client = self.FakeAemetClient()
 
     monkeypatch.setattr(
         "controllers.compare_controller.filter_records",
