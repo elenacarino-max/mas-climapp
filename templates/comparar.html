@@ -77,16 +77,24 @@
         <!-- DIFERENCIAS -->
         <div class="box">
             <h3>Diferencias</h3>
-            <p>Temperatura: {{ resultado.diferencias.temperatura }}</p>
-            <p>Humedad: {{ resultado.diferencias.humedad }}</p>
-            <p>Viento: {{ resultado.diferencias.viento }}</p>
-            <p>Lluvia: {{ resultado.diferencias.lluvia }}</p>
+            <p class="diff-row {% if resultado.discrepancias.temperatura %}diff-alert{% else %}diff-ok{% endif %}">
+                Temperatura: {{ resultado.diferencias.temperatura }} ºC
+            </p>
+            <p class="diff-row {% if resultado.discrepancias.humedad %}diff-alert{% else %}diff-ok{% endif %}">
+                Humedad: {{ resultado.diferencias.humedad }} %
+            </p>
+            <p class="diff-row {% if resultado.discrepancias.viento %}diff-alert{% else %}diff-ok{% endif %}">
+                Viento: {{ resultado.diferencias.viento }} km/h
+            </p>
+            <p class="diff-row {% if resultado.discrepancias.lluvia %}diff-alert{% else %}diff-ok{% endif %}">
+                Lluvia: {{ resultado.diferencias.lluvia }} mm
+            </p>
         </div>
 
         <!-- RESULTADO FINAL -->
         {% if resultado.hay_discrepancia %}
         <div class="alert error">
-            Hay discrepancias importantes
+            Hay discrepancias importantes entre el registro manual y AEMET
         </div>
         {% else %}
         <div class="alert success">

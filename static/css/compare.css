@@ -134,6 +134,27 @@ button:hover {
   margin-bottom: 0.45rem;
 }
 
+.diff-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  border-radius: 10px;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid transparent;
+}
+
+.diff-ok {
+  color: #86efac;
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.24);
+}
+
+.diff-alert {
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.28);
+}
+
 .alert {
   margin-top: 1rem;
   padding: 0.9rem;

@@ -5,6 +5,13 @@ from services.weather_api_service import WeatherAPIService
 from services.normalizer_service import normalizar_datos_aemet
 from services.logging_service import log_info, log_error
 
+DISCREPANCY_LIMITS = {
+    "temperatura": 3,
+    "humedad": 10,
+    "viento": 10,
+    "lluvia": 5,
+}
+
 def calculate_difference(v1, v2) -> float:
     try:
         val1 = float(v1) if v1 is not None else 0.0
@@ -14,12 +21,17 @@ def calculate_difference(v1, v2) -> float:
         return 0.0
 
 def has_discrepancy(differences: dict) -> bool:
-    return (
-        differences["temperatura"] > 3 or
-        differences["humedad"] > 10 or
-        differences["viento"] > 10 or
-        differences["lluvia"] > 5
+    return any(
+        differences.get(campo, 0) > limite
+        for campo, limite in DISCREPANCY_LIMITS.items()
     )
+
+
+def get_discrepancy_details(differences: dict) -> dict:
+    return {
+        campo: differences.get(campo, 0) > limite
+        for campo, limite in DISCREPANCY_LIMITS.items()
+    }
 
 
 def _obtener_observacion_para_comparativa(
@@ -138,5 +150,6 @@ def compare_latest_records(municipio: str, fecha_html: str = None) -> dict:
         "manual": manual_record,
         "api": api_record,
         "diferencias": diffs,
+        "discrepancias": get_discrepancy_details(diffs),
         "hay_discrepancia": has_discrepancy(diffs)
     }
