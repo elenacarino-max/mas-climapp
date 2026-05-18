@@ -501,3 +501,7 @@ Proyecto desarrollado como parte del Bootcamp IA.
 - Luis Ahmedel Allali
 - Gianmario Conforto
 - Anas Fady Moustafa
+
+## Documentacion Complementaria
+
+- [Ver informe del proyecto en PDF](docs/assets/ClimApp.pdf)
