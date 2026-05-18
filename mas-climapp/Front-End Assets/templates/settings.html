@@ -1,0 +1,211 @@
+{% extends "base.html" %} {% set active_page = 'settings' %} {% block title
+%}Ajustes - Madrid Weather Dashboard{% endblock %} {% block content %}
+<header class="banner">
+  <h1>Ajustes del Sistema</h1>
+</header>
+
+<div class="settings-container">
+  <div class="tabs-header">
+    <button class="tab-btn active" onclick="openTab(event, 'tab-perfil')">
+      <i class="fas fa-user-circle"></i> Mi Perfil
+    </button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-personal')">
+      <i class="fas fa-users-cog"></i> Gestión de Personal
+    </button>
+    <button class="tab-btn" onclick="openTab(event, 'tab-sistema')">
+      <i class="fas fa-sliders-h"></i> Sistema
+    </button>
+  </div>
+
+  <div id="tab-perfil" class="tab-content active">
+    <h2 class="form-title settings-title">Información Principal</h2>
+    <form class="weather-form">
+      <div class="form-row two-cols settings-grid">
+        <div class="input-group">
+          <label>Nombre de Usuario</label>
+          <input type="text" value="SuperAdmin Principal" required />
+        </div>
+        <div class="input-group">
+          <label>Correo Electrónico</label>
+          <input type="email" value="admin@ayuntamiento.madrid.es" required />
+        </div>
+        <div class="input-group">
+          <label>Teléfono (Login)</label>
+          <input
+            type="tel"
+            value="+34 600 000 000"
+            readonly
+            class="readonly-input"
+            title="El teléfono de login solo puede cambiarse vía Auth0"
+          />
+        </div>
+        <div class="input-group">
+          <label>Provincia / Municipio</label>
+          <input type="text" value="Madrid" required />
+        </div>
+      </div>
+      <div class="form-actions settings-actions">
+        <button type="button" class="submit-btn btn-save">
+          Guardar Cambios
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div id="tab-personal" class="tab-content">
+    <div class="personal-header">
+      <h2 class="form-title m-0">Directorio de Personal</h2>
+      <button class="add-btn-primary no-border" onclick="openStaffModal()">
+        <i class="fas fa-user-plus"></i> Añadir Usuario
+      </button>
+    </div>
+
+    <table class="staff-table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Teléfono (Login)</th>
+          <th>Rol</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="staff-table-body">
+        <tr>
+          <td>
+            <strong>SuperAdmin Principal</strong><br />
+            <small>admin@ayuntamiento.madrid.es</small>
+          </td>
+          <td>+34 600 000 000</td>
+          <td><span class="role-badge role-superadmin">Super Admin</span></td>
+          <td><span class="text-muted">No eliminable</span></td>
+        </tr>
+        <tr>
+          <td>
+            <strong>Juan Pérez</strong><br />
+            <small>jperez@ayuntamiento.madrid.es</small>
+          </td>
+          <td>+34 611 111 111</td>
+          <td>
+            <span class="role-badge role-admin">Ayuntamiento (Admin)</span>
+          </td>
+          <td>
+            <button class="btn-delete" onclick="deleteUser(this)">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <strong>María García</strong><br />
+            <small>mgarcia@tecnicos.madrid.es</small>
+          </td>
+          <td>+34 622 222 222</td>
+          <td>
+            <span class="role-badge role-trabajador">Técnico (Trabajador)</span>
+          </td>
+          <td>
+            <button class="btn-delete" onclick="deleteUser(this)">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <strong>Equipo Emergencias 1</strong><br />
+            <small>emergencias1@madrid.es</small>
+          </td>
+          <td>+34 633 333 333</td>
+          <td>
+            <span class="role-badge role-viewer">Emergencias (Viewer)</span>
+          </td>
+          <td>
+            <button class="btn-delete" onclick="deleteUser(this)">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div id="tab-sistema" class="tab-content">
+    <h2 class="form-title">Configuración del Sistema</h2>
+    <p>
+      Esta sección está reservada para configuraciones futuras de la Base de
+      Datos, integraciones de Auth0 y estado del servidor.
+    </p>
+  </div>
+</div>
+
+<div id="staff-modal" class="modal-overlay" style="display: none">
+  <div class="modal-content staff-modal-content">
+    <div class="modal-header">
+      <h3>Añadir Nuevo Usuario</h3>
+      <button class="close-modal-btn" onclick="closeStaffModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form
+        id="new-staff-form"
+        class="weather-form"
+        onsubmit="submitNewStaff(event)"
+      >
+        <div class="input-group mb-15">
+          <label>Nombre Completo</label>
+          <input
+            type="text"
+            id="staff-name"
+            placeholder="Ej: Carlos López"
+            required
+            class="full-width-input"
+          />
+        </div>
+        <div class="input-group mb-15">
+          <label>Correo Electrónico</label>
+          <input
+            type="email"
+            id="staff-email"
+            placeholder="Ej: clopez@madrid.es"
+            required
+            class="full-width-input"
+          />
+        </div>
+        <div class="input-group mb-15">
+          <label>Teléfono (Para Login en Auth0)</label>
+          <input
+            type="tel"
+            id="staff-phone"
+            placeholder="+34 600 000 000"
+            required
+            class="full-width-input"
+          />
+        </div>
+        <div class="input-group mb-25">
+          <label>Asignar Rol</label>
+          <select id="staff-role" required class="full-width-select">
+            <option value="" disabled selected>Selecciona un rol...</option>
+            <option value="admin">Administrador (Ayuntamiento)</option>
+            <option value="trabajador">Técnico (Añadir Datos)</option>
+            <option value="viewer">
+              Viewer (Solo Visualizar - Emergencias)
+            </option>
+          </select>
+          <small class="role-warning"
+            >* El rol "Super Admin" solo puede asignarse desde la base de
+            datos.</small
+          >
+        </div>
+        <div class="modal-footer clean-footer">
+          <button type="button" class="btn-cancel" onclick="closeStaffModal()">
+            Cancelar
+          </button>
+          <button type="submit" class="btn-confirm-upload">
+            Crear Usuario
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,402 @@
+{% extends "base.html" %} {% set active_page = 'index' %} {% block title
+%}Dashboard - Madrid Weather{% endblock %} {% block content %}
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<header class="banner">
+  <h1>Bienvenido, Jose</h1>
+  <p>Resumen Meteorológico de Madrid Capital</p>
+</header>
+
+<section class="summary-container">
+  <div id="avg-temp" class="madrid-weather-card"></div>
+  <div id="avg-hum" class="madrid-weather-card"></div>
+  <div id="avg-wind" class="madrid-weather-card"></div>
+</section>
+
+<section class="dashboard">
+  <div
+    id="map"
+    style="
+      height: 450px;
+      width: 100%;
+      z-index: 1;
+      border-radius: 12px;
+      margin-bottom: 25px;
+      border: 1px solid #ddd;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    "
+  ></div>
+
+  <div class="dashboard-footer-row">
+    <div class="ranking-container">
+      <h3 class="section-title">
+        <i class="fas fa-medal"></i> Ranking de Estaciones
+      </h3>
+      <div class="ranking-grid">
+        <div class="rank-card temp">
+          <div class="rank-icon"><i class="fas fa-thermometer-high"></i></div>
+          <div class="rank-info">
+            <span class="rank-category">Calor Extremo</span>
+            <span id="top-temp-name" class="rank-station">Cargando...</span>
+            <span id="top-temp-val" class="rank-value">--°C</span>
+          </div>
+        </div>
+        <div class="rank-card hum">
+          <div class="rank-icon"><i class="fas fa-tint"></i></div>
+          <div class="rank-info">
+            <span class="rank-category">Más Humedad</span>
+            <span id="top-hum-name" class="rank-station">Cargando...</span>
+            <span id="top-hum-val" class="rank-value">--%</span>
+          </div>
+        </div>
+        <div class="rank-card wind">
+          <div class="rank-icon"><i class="fas fa-wind"></i></div>
+          <div class="rank-info">
+            <span class="rank-category">Ráfaga Máxima</span>
+            <span id="top-wind-name" class="rank-station">Cargando...</span>
+            <span id="top-wind-val" class="rank-value">-- km/h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-column">
+      <h3 class="section-title">
+        <i class="fas fa-phone-alt"></i> Teléfonos de Interés
+      </h3>
+      <div class="emergency-radio-frame">
+        <div class="radio-screen-overlay">
+          <div class="screen-header">
+            <span>📶 VFO</span><span>85% 🔋</span>
+          </div>
+          <div class="radio-internal-title">EMERG CHANNELS</div>
+          <div class="channel-list">
+            <a href="tel:112" class="channel-link">
+              <div class="channel-row">
+                <span class="ch-id">001</span
+                ><span class="ch-name">112 EMERG</span>
+              </div>
+            </a>
+            <a href="tel:080" class="channel-link">
+              <div class="channel-row">
+                <span class="ch-id">002</span
+                ><span class="ch-name">080 FIRE</span>
+              </div>
+            </a>
+            <a href="tel:010" class="channel-link">
+              <div class="channel-row">
+                <span class="ch-id">003</span
+                ><span class="ch-name">010 AYUNT</span>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<section
+  class="chart-section"
+  style="
+    margin-top: 25px;
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    border: 1px solid #eee;
+  "
+>
+  <div
+    style="
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    "
+  >
+    <h3 style="margin: 0; color: #003366; font-size: 1.2rem">
+      <i class="fas fa-chart-area"></i> Evolución Histórica
+    </h3>
+
+    <div style="display: flex; gap: 15px">
+      <select
+        id="chart-metric"
+        style="
+          padding: 8px 15px;
+          border-radius: 6px;
+          border: 1px solid #ccc;
+          font-weight: bold;
+          color: #003366;
+          outline: none;
+        "
+      >
+        <option value="temp">Temperatura (°C)</option>
+        <option value="hum">Humedad (%)</option>
+        <option value="viento">Viento (km/h)</option>
+      </select>
+
+      <select
+        id="chart-timeframe"
+        style="
+          padding: 8px 15px;
+          border-radius: 6px;
+          border: 1px solid #ccc;
+          font-weight: bold;
+          color: #003366;
+          outline: none;
+        "
+      >
+        <option value="7">Última Semana</option>
+        <option value="30">Último Mes</option>
+        <option value="365">Último Año</option>
+      </select>
+    </div>
+  </div>
+
+  <div style="position: relative; height: 300px; width: 100%">
+    <canvas id="weatherChart"></canvas>
+  </div>
+</section>
+<script>
+  fetch("/api/mapa_datos")
+    .then((response) => response.json())
+    .then((data) => {
+      let sumTemp = 0,
+        sumHum = 0,
+        sumWind = 0;
+      let validStations = 0;
+
+      // 1. Add up all the numbers
+      data.forEach((estacion) => {
+        let t = parseFloat(estacion.temperatura);
+        let h = parseFloat(estacion.humedad);
+        let w = parseFloat(estacion.viento);
+
+        if (!isNaN(t) && !isNaN(h) && !isNaN(w)) {
+          sumTemp += t;
+          sumHum += h;
+          sumWind += w;
+          validStations++;
+        }
+      });
+
+      // 2. Divide to get the average
+      if (validStations > 0) {
+        let avgT = (sumTemp / validStations).toFixed(1);
+        let avgH = (sumHum / validStations).toFixed(1);
+        let avgW = (sumWind / validStations).toFixed(1);
+
+        // 3. Inject the designs into your top boxes
+        const cardStyle =
+          "display: flex; align-items: center; gap: 15px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #eee; width: 100%;";
+
+        document.getElementById("avg-temp").innerHTML = `
+                <div style="${cardStyle}">
+                    <div style="font-size: 2.5rem; color: #dc3545;"><i class="fas fa-temperature-half"></i></div>
+                    <div>
+                        <div style="font-size: 0.85rem; color: #888; text-transform: uppercase; font-weight: bold;">Temp. Promedio</div>
+                        <div style="font-size: 1.8rem; font-weight: bold; color: #003366;">${avgT}°C</div>
+                    </div>
+                </div>`;
+
+        document.getElementById("avg-hum").innerHTML = `
+                <div style="${cardStyle}">
+                    <div style="font-size: 2.5rem; color: #007bff;"><i class="fas fa-droplet"></i></div>
+                    <div>
+                        <div style="font-size: 0.85rem; color: #888; text-transform: uppercase; font-weight: bold;">Humedad Media</div>
+                        <div style="font-size: 1.8rem; font-weight: bold; color: #003366;">${avgH}%</div>
+                    </div>
+                </div>`;
+
+        document.getElementById("avg-wind").innerHTML = `
+                <div style="${cardStyle}">
+                    <div style="font-size: 2.5rem; color: #6c757d;"><i class="fas fa-wind"></i></div>
+                    <div>
+                        <div style="font-size: 0.85rem; color: #888; text-transform: uppercase; font-weight: bold;">Viento Promedio</div>
+                        <div style="font-size: 1.8rem; font-weight: bold; color: #003366;">${avgW} km/h</div>
+                    </div>
+                </div>`;
+      }
+    })
+    .catch((error) => console.error("Error cargando los promedios:", error));
+
+  document.addEventListener("DOMContentLoaded", function () {
+    // 1. Initialize the map centered on Madrid
+    var map = L.map("map").setView([40.4168, -3.7038], 11);
+
+    // 2. Add the base tiles
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors",
+    }).addTo(map);
+
+    // 3. The "Silver Bullet" Fix
+    setTimeout(function () {
+      map.invalidateSize();
+    }, 500);
+
+    // ==========================================
+    // 4. LIVE WEATHER MARKERS
+    // ==========================================
+
+    // Dictionary to match your database names to exact GPS coordinates
+    const coordenadasEstaciones = {
+      "MADRID, RETIRO": [40.4115, -3.6775],
+      "MADRID AEROPUERTO": [40.4669, -3.5627],
+      "MADRID, CIUDAD UNIVERSITARIA": [40.4495, -3.7335],
+      "MADRID, CUATRO VIENTOS": [40.3755, -3.7862],
+      GETAFE: [40.306, -3.7323],
+    };
+
+    // Fetch the latest data from Python
+    fetch("/api/mapa_datos")
+      .then((response) => response.json())
+      .then((data) => {
+        data.forEach((estacion) => {
+          // Find coords for the station, or default to central Madrid
+          let coords = coordenadasEstaciones[estacion.municipio] || [
+            40.4168, -3.7038,
+          ];
+
+          // Determine Temperature Color (Blue for cold, Green for normal, Red for hot)
+          let tempColor = "#28a745"; // Default Green
+          if (estacion.temperatura > 30) tempColor = "#dc3545"; // Red
+          if (estacion.temperatura < 15) tempColor = "#007bff"; // Blue
+
+          // Design the HTML "Card" that pops up when you click a pin
+          let popupCard = `
+                    <div style="min-width: 200px; text-align: center; font-family: inherit;">
+                        <h4 style="margin: 0 0 10px 0; color: #003366; border-bottom: 2px solid #007bff; padding-bottom: 5px;">
+                            <i class="fas fa-map-marker-alt"></i> ${estacion.municipio}
+                        </h4>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left;">
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #eee;">
+                                <span style="font-size: 0.75rem; color: #888; text-transform: uppercase; font-weight: bold;">Temp</span><br>
+                                <strong style="font-size: 1.2rem; color: ${tempColor};">
+                                    ${estacion.temperatura}°C
+                                </strong>
+                            </div>
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #eee;">
+                                <span style="font-size: 0.75rem; color: #888; text-transform: uppercase; font-weight: bold;">Hum</span><br>
+                                <strong style="font-size: 1.2rem; color: #003366;">
+                                    ${estacion.humedad}%
+                                </strong>
+                            </div>
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; grid-column: span 2; text-align: center; border: 1px solid #eee;">
+                                <span style="font-size: 0.75rem; color: #888; text-transform: uppercase; font-weight: bold;">Viento</span><br>
+                                <strong style="font-size: 1.2rem; color: #555;">
+                                    <i class="fas fa-wind" style="color: #6c757d;"></i> ${estacion.viento} km/h
+                                </strong>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+          // Add the Blue Pin to the map and attach the Popup Card
+          L.marker(coords).addTo(map).bindPopup(popupCard);
+        });
+      })
+      .catch((error) => console.error("Error cargando el mapa:", error));
+  });
+
+  let weatherChart; // Global variable to hold our chart
+  let rawChartData = []; // Store the database data
+
+  // 1. Fetch the data from our new route
+  fetch("/api/chart_datos")
+    .then((response) => response.json())
+    .then((data) => {
+      rawChartData = data;
+      renderChart(); // Draw it for the first time
+    });
+
+  // 2. Listen for dropdown changes to redraw the chart
+  document
+    .getElementById("chart-metric")
+    .addEventListener("change", renderChart);
+  document
+    .getElementById("chart-timeframe")
+    .addEventListener("change", renderChart);
+
+  // 3. The function that draws and updates the chart
+  function renderChart() {
+    const metric = document.getElementById("chart-metric").value;
+    const daysToKeep = parseInt(
+      document.getElementById("chart-timeframe").value,
+    );
+
+    // Filter the data based on the timeframe dropdown (e.g., last 7 days)
+    const filteredData = rawChartData.slice(-daysToKeep);
+
+    const labels = filteredData.map((d) => d.dia); // The X-Axis (Dates)
+    let dataset = [];
+    let labelName = "";
+    let lineColor = "";
+
+    // Change data and colors based on the metric dropdown
+    if (metric === "temp") {
+      dataset = filteredData.map((d) => parseFloat(d.temp).toFixed(1));
+      labelName = "Temperatura Promedio (°C)";
+      lineColor = "rgb(220, 53, 69)"; // Red
+    } else if (metric === "hum") {
+      dataset = filteredData.map((d) => parseFloat(d.hum).toFixed(1));
+      labelName = "Humedad Promedio (%)";
+      lineColor = "rgb(0, 123, 255)"; // Blue
+    } else if (metric === "viento") {
+      dataset = filteredData.map((d) => parseFloat(d.viento).toFixed(1));
+      labelName = "Viento Promedio (km/h)";
+      lineColor = "rgb(108, 117, 125)"; // Grey
+    }
+
+    // Destroy the old chart before drawing the new one
+    if (weatherChart) {
+      weatherChart.destroy();
+    }
+
+    // Draw the new chart
+    const ctx = document.getElementById("weatherChart").getContext("2d");
+    weatherChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: labelName,
+            data: dataset,
+            borderColor: lineColor,
+            backgroundColor: lineColor
+              .replace(")", ", 0.1)")
+              .replace("rgb", "rgba"),
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4, // Makes the line curved and smooth!
+            pointRadius: 4,
+            pointHoverRadius: 7, // Makes the dot bigger when you hover
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: "index",
+            intersect: false,
+            padding: 10,
+            titleFont: { size: 14 },
+            bodyFont: { size: 14, weight: "bold" },
+          },
+        },
+        scales: {
+          y: { beginAtZero: false },
+          x: { grid: { display: false } },
+        },
+      },
+    });
+  }
+</script>
+{% endblock %}

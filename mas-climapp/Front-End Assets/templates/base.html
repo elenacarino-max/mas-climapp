@@ -1,0 +1,81 @@
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Madrid Weather Dashboard{% endblock %}</title>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+  <body>
+    <div class="main-dashboard-wrapper">
+      <nav class="sidebar">
+        <div class="logo-container">
+          <span class="nav-text logo-text">LOGO</span>
+        </div>
+        <ul class="nav-list">
+          <li class="nav-item">
+            <a
+              href="{{ url_for('index') }}"
+              class="nav-link {% if active_page == 'index' %}active{% endif %}"
+            >
+              <i class="fas fa-home"></i>
+              <span class="nav-text">Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a
+              href="{{ url_for('anadir_datos') }}"
+              class="nav-link {% if active_page == 'anadir_datos' %}active{% endif %}"
+            >
+              <i class="fas fa-plus"></i>
+              <span class="nav-text">Añadir Datos</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a
+              href="{{ url_for('informe') }}"
+              class="nav-link {% if active_page == 'informe' %}active{% endif %}"
+            >
+              <i class="fas fa-file-alt"></i>
+              <span class="nav-text">Informes</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a
+              href="{{ url_for('settings') }}"
+              class="nav-link {% if active_page == 'settings' %}active{% endif %}"
+            >
+              <i class="fas fa-cog"></i> <span class="nav-text">Ajustes</span>
+            </a>
+          </li>
+        </ul>
+        <div class="bottom-content">
+          <a
+            href="{{ url_for('settings') }}"
+            class="nav-link {% if active_page == 'settings' %}active{% endif %}"
+          >
+            <i class="fas fa-cog"></i> <span class="nav-text">Ajustes</span>
+          </a>
+        </div>
+      </nav>
+
+      <main class="content-area">{% block content %} {% endblock %}</main>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  </body>
+</html>

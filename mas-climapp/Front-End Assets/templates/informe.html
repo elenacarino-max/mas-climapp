@@ -1,0 +1,162 @@
+{% extends "base.html" %} {% set active_page = 'informe' %} {% block title
+%}Informes Históricos{% endblock %} {% block content %}
+<header class="banner">
+  <h1>Informes Históricos</h1>
+  <p>Consolidated Data: 2024 - 2026</p>
+</header>
+
+<div class="action-bar">
+  <div id="export-buttons-container" class="import-group"></div>
+</div>
+
+<div class="settings-container" style="margin-top: 20px; padding: 25px">
+  <h2 class="form-title">Weather Records Explorer</h2>
+
+  <table id="reporteTable" class="display staff-table" style="width: 100%">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Station</th>
+        <th>Temp (°C)</th>
+        <th>Hum (%)</th>
+        <th>Wind (km/h)</th>
+        <th>Status</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for reg in registros %}
+      <tr>
+        <td><strong>{{ reg['fecha'] }}</strong></td>
+
+        <td>{{ reg['municipio'] }}</td>
+
+        <td>
+          {% if reg['temperatura'] and reg['temperatura'] != 'None' %} {{
+          reg['temperatura'] }}°C {% else %} -- {% endif %}
+        </td>
+
+        <td>
+          {% if reg['humedad'] and reg['humedad'] != 'None' %} {{ reg['humedad']
+          }}% {% else %} -- {% endif %}
+        </td>
+
+        <td>
+          {% if reg['viento'] and reg['viento'] != 'None' %} {{ reg['viento'] }}
+          km/h {% else %} -- {% endif %}
+        </td>
+
+        <td>
+          <span class="role-badge {{ reg.status_class }}">
+            {{ reg.status_label }}
+          </span>
+        </td>
+
+        <td style="text-align: center">
+          <button
+            onclick="borrarRegistro({{ reg['id'] }})"
+            style="
+              background: none;
+              border: none;
+              color: #dc3545;
+              cursor: pointer;
+              font-size: 1.1rem;
+            "
+            title="Eliminar Registro"
+          >
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+  $(document).ready(function () {
+    var table = $("#reporteTable").DataTable({
+      pageLength: 15,
+      order: [[0, "desc"]],
+      dom: "lfrtip", // We manage the button placement manually below
+      language: {
+        search: "Search:",
+        lengthMenu: "Show _MENU_ rows",
+        info: "Showing _START_ to _END_ of _TOTAL_ entries",
+      },
+    });
+
+    // Manually create the Export Buttons and style them to match your design
+    new $.fn.dataTable.Buttons(table, {
+      buttons: [
+        {
+          extend: "excelHtml5",
+          text: '<i class="fas fa-file-excel"></i> Export Excel',
+          className: "import-btn excel-custom-btn",
+          title: "Weather_Report_2024_2026",
+        },
+        {
+          extend: "pdfHtml5",
+          text: '<i class="fas fa-file-pdf"></i> Export PDF',
+          className: "import-btn pdf-custom-btn",
+          title: "Weather_Report_2024_2026",
+        },
+      ],
+    });
+
+    // Add the buttons to our specific container in the HTML
+    table.buttons().container().appendTo("#export-buttons-container");
+  });
+</script>
+<script>
+  function borrarRegistro(id) {
+    // 1. Ask for confirmation so you don't delete by accident!
+    if (
+      confirm(
+        "⚠️ ¿Estás seguro de que quieres eliminar este registro? Esta acción no se puede deshacer.",
+      )
+    ) {
+      // 2. Send the delete request to Python
+      fetch(`/api/borrar_registro/${id}`, {
+        method: "DELETE",
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            // 3. Reload the page to remove the row from the table
+            window.location.reload();
+          } else {
+            alert("❌ Error: " + data.error);
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          alert("❌ Error de conexión con el servidor.");
+        });
+    }
+  }
+</script>
+<style>
+  /* Styling the auto-generated buttons to match your theme */
+  .excel-custom-btn {
+    background-color: #28a745 !important;
+    color: white !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    border-radius: 8px !important;
+    cursor: pointer;
+    margin-right: 10px;
+  }
+  .pdf-custom-btn {
+    background-color: #dc3545 !important;
+    color: white !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    border-radius: 8px !important;
+    cursor: pointer;
+  }
+  .dt-buttons {
+    margin-bottom: 0px;
+  }
+</style>
+{% endblock %}
