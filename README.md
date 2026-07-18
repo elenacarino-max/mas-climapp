@@ -4,27 +4,35 @@ Aplicacion web para consultar, registrar y comparar datos meteorologicos usando 
 
 Mas ClimApp combina una interfaz web en Flask con una API REST en FastAPI. La aplicacion permite consultar el tiempo por GPS o localidad, registrar mediciones manuales, revisar historico, comparar registros manuales con datos AEMET y mostrar alertas climaticas segun niveles de riesgo.
 
+> 🤝 **Proyecto colaborativo:** desarrollado en equipo durante el bootcamp de Analisis de Datos e Inteligencia Artificial. Este repositorio forma parte de mi portfolio y conserva el historial de desarrollo y las contribuciones realizadas durante el proyecto.
+
+
 ## Guia Rapida Para Arrancar
 
 Esta es la forma corta de poner el proyecto en marcha en local.
 
-### 1. Entrar En El Proyecto
+### 1. Clonar El Repositorio
 
-```powershell
-cd "C:\Users\User\OneDrive\Documentos\BOOTCAMP IA\proyecto3_masclimapp\mas-climapp"
+```bash
+git clone https://github.com/elenacarino-max/mas-climapp.git
+cd mas-climapp
 ```
 
-### 2. Activar El Entorno Virtual
+### 2. Crear Y Activar El Entorno Virtual
 
-```powershell
-.\venv\Scripts\activate
-```
-
-Si no existe el entorno virtual:
+En Windows:
 
 ```powershell
 python -m venv venv
 .\venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+En Linux o macOS:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 ```
 
