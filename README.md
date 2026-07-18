@@ -59,6 +59,7 @@ En la raiz del proyecto debe existir:
 AEMET_API_KEY=tu_api_key_de_aemet
 SECRET_KEY=una_clave_secreta_para_flask
 ```
+La API key puede obtenerse en [AEMET OpenData](https://opendata.aemet.es/).
 
 ### 4. Arrancar La App Web Flask
 
@@ -343,75 +344,6 @@ http://127.0.0.1:8000/docs
 | Requests / HTTPX | Conexion HTTP |
 | AEMET OpenData | Fuente oficial meteorologica |
 | Pytest | Tests automatizados |
-
-## Instalacion
-
-### 1. Clonar El Repositorio
-
-```powershell
-git clone https://github.com/elenacarino-max/mas-climapp.git
-cd mas-climapp
-```
-
-### 2. Crear Y Activar Entorno Virtual
-
-En Windows:
-
-```powershell
-python -m venv venv
-.\venv\Scripts\activate
-```
-
-Si `python` no esta reconocido, instala Python desde la web oficial y desactiva los alias de Microsoft Store en Windows.
-
-### 3. Instalar Dependencias
-
-```powershell
-pip install -r requirements.txt
-```
-
-### 4. Configurar Variables De Entorno
-
-Crea un archivo `.env` en la raiz del proyecto:
-
-```env
-AEMET_API_KEY=tu_api_key_de_aemet
-SECRET_KEY=una_clave_secreta_para_flask
-```
-
-La API key se obtiene en AEMET OpenData:
-
-```text
-https://opendata.aemet.es/
-```
-
-## Como Arrancar La Aplicacion
-
-### App Web Flask
-
-```powershell
-python app.py
-```
-
-Abrir:
-
-```text
-http://127.0.0.1:5000/
-```
-
-### API REST FastAPI
-
-En otra terminal, con el entorno virtual activado:
-
-```powershell
-python -m uvicorn main_api:app --reload
-```
-
-Abrir Swagger:
-
-```text
-http://127.0.0.1:8000/docs
-```
 
 ## Rutas Principales
 
