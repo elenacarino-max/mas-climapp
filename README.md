@@ -4,7 +4,22 @@ Aplicacion web para consultar, registrar y comparar datos meteorologicos usando 
 
 Mas ClimApp combina una interfaz web en Flask con una API REST en FastAPI. La aplicacion permite consultar el tiempo por GPS o localidad, registrar mediciones manuales, revisar historico, comparar registros manuales con datos AEMET y mostrar alertas climaticas segun niveles de riesgo.
 
-> 🤝 **Proyecto colaborativo:** desarrollado en equipo durante el bootcamp de Analisis de Datos e Inteligencia Artificial. Este repositorio forma parte de mi portfolio y conserva el historial de desarrollo y las contribuciones realizadas durante el proyecto.
+## Proyecto Colaborativo Y Mi Contribución
+
+Este proyecto fue desarrollado en equipo durante el bootcamp de Analisis de datos e Inteligencia Artificial. Este repositorio forma parte de mi portfolio y conserva el historial de desarrollo y las contribuciones realizadas durante el proyecto.
+
+Mi participación se centró principalmente en:
+
+* Integración y estabilización de la API después de combinar las ramas del equipo.
+* Corrección de rutas y tests automatizados de la API.
+* Desarrollo y mejora del dashboard principal.
+* Incorporación de la búsqueda meteorológica por localidad.
+* Representación visual de las alertas según su nivel de riesgo.
+* Mejora de la comparativa entre registros manuales y datos oficiales de AEMET.
+* Preparación de la aplicación y la documentación para la demostración final.
+* Resolución de incidencias y conflictos durante la integración.
+
+Estas contribuciones pueden consultarse en el historial de commits y pull requests del repositorio.
 
 
 ## Guia Rapida Para Arrancar
